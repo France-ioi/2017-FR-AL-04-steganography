@@ -2,6 +2,7 @@ import React from 'react';
 import EpicComponent from 'epic-component';
 import {include, defineAction, addReducer} from 'epic-linker';
 import WorkspaceBuilder from 'alkindi-task-lib/simple_workspace';
+import update from 'immutability-helper';
 
 import {View} from './views';
 
@@ -11,6 +12,8 @@ export default function* (deps) {
 
   yield defineAction('addImage', 'Workspace.AddImage');
   yield defineAction('deleteImage', 'Workspace.DeleteImage');
+
+  yield defineAction('imageLoaded', 'Workspace.Image.Loaded');
 
   /* Simple workspace interface: init, dump, load, update, View */
 
@@ -28,27 +31,40 @@ export default function* (deps) {
       };
       images.push(image);
     }
-    return {images, nextID: images.length};
+    return {
+      images,
+      nextID: images.length,
+      nOriginalImagesLoaded: 0,
+      originalImagesLoaded: false
+    };
   };
 
   const dump = function (workspace) {
     // Extract the smallest part of the workspace that is needed to rebuild it.
     const {images, nextID} = workspace;
-    return {images, nextID};
+    return {images: images.map(dumpImage), nextID};
   };
+  function dumpImage (image) {
+    const {operationType, operation, first, second} = image;
+    return {operationType, operation, first, second};
+  }
 
   const load = function (dump) {
     // Use a saved dump to rebuild a workspace.  Any computation that depends
     // on the task is done in update.
     const {images, nextID} = dump;
-    return {images, nextID};
+    return {images: images.map(loadImage), nextID};
   };
+  function loadImage (image, id) {
+    const {operationType, operation, first, second} = image;
+    return {operationType, operation, first, second, id};
+  }
 
-  const update = function (task, workspace) {
+  const updateWorkspace = function (task, workspace) {
     return {...workspace};
   };
 
-  yield include(WorkspaceBuilder({init, dump, load, update, View: View(deps)}));
+  yield include(WorkspaceBuilder({init, dump, load, update: updateWorkspace, View: View(deps)}));
 
   /*
     Add reducers for workspace actions and any needed sagas below:
@@ -77,4 +93,22 @@ export default function* (deps) {
     workspace = {...workspace, images};
     return {...state, workspace};
   });
+
+  yield addReducer('imageLoaded', function (state, action) {
+    const {index, element} = action;
+    // state.workspace.images[index].element = element
+    console.log("loaded", index, element);
+    const nOriginalImagesLoaded = state.workspace.nOriginalImagesLoaded + 1;
+    const changes = {
+      workspace: {
+        images: {[index]: {element: {$set: element}}},
+        nOriginalImagesLoaded: {$set: nOriginalImagesLoaded}
+      }
+    };
+    if (nOriginalImagesLoaded == state.workspace.images.length) {
+      changes.workspace.originalImagesLoaded = {$set: true};
+    }
+    return update(state, changes);
+  });
+
 };

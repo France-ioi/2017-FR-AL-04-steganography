@@ -74,7 +74,7 @@ export const CanvasImage = EpicComponent(self => {
       let imageData, sourceData, sourceData1, sourceData2, destData;
       switch(operationType) {
         case "image":
-          tempCtx.drawImage(document.getElementById("image_" + id), 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+          tempCtx.drawImage(tree.element, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
           destData = tempCtx.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
           break;
         case "unary":
@@ -378,13 +378,10 @@ export const View = actions => EpicComponent(self => {
     stagedImages: [null, null]
   };
 
-  let imageLoadCounter = 0;
-
-  const onImageLoad = function() {
-    imageLoadCounter++;
-    if(imageLoadCounter === self.props.task.originalImagesURLs.length) {
-      self.setState({...self.state, originalImagesLoaded: true});
-    }
+  const onImageLoad = function(event) {
+    const element = event.target;
+    const index = element.getAttribute('data-index');
+    self.props.dispatch({type: actions.imageLoaded, index, element});
   };
 
   const changeImageIndex = function(imageIndex) {
@@ -450,9 +447,9 @@ export const View = actions => EpicComponent(self => {
 
   self.render = function () {
     const {task, workspace} = self.props;
+    const {images, originalImagesLoaded} = workspace;
     const {originalImagesURLs} = task;
-    const {images} = workspace;
-    const {originalImagesLoaded, currentImageIndex, currentScrollIndex, stagedImages} = self.state;
+    const {currentImageIndex, currentScrollIndex, stagedImages} = self.state;
     return (
       <div>
         <canvas id="tempCanvas" width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{display: "none"}}/>
@@ -473,9 +470,12 @@ export const View = actions => EpicComponent(self => {
             </tr>
           </tbody>
         </table>
-        {originalImagesURLs.map(function(imageURL, imageIndex) {
-          return <img src={imageURL} onLoad={onImageLoad} id={"image_" + imageIndex} key={imageIndex} style={{display: "none"}}/>;
-        })}
+        {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
+        <div style={{display: "none"}}>
+          {originalImagesURLs.map(function(imageURL, imageIndex) {
+            return <img src={imageURL} onLoad={onImageLoad} data-index={imageIndex} key={imageIndex}/>;
+          })}
+        </div>
       </div>
     );
     // <CanvasImage image={{operationType: "binary", operation: "subtract", first: {operationType: "unary", id: 17, first: {operationType: "image", id: 0}, operation: "extractRed"}, second: {operationType: "image", id:1}}} load={self.state.originalImagesLoaded} />
