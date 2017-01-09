@@ -39,6 +39,7 @@
       "epic-component": "npm:epic-component@^0.3.1",
       "epic-linker": "npm:epic-linker@^1.1.0",
       "font-awesome": "npm:font-awesome@^4.7.0",
+      "immutability-helper": "npm:immutability-helper@^2.1.1",
       "rc-tooltip": "npm:rc-tooltip@^3.4.2",
       "react-bootstrap": "npm:react-bootstrap@^0.30.7",
       "react-redux": "npm:react-redux@^5.0.1"

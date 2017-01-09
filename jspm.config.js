@@ -53,6 +53,7 @@ SystemJS.config({
     "fs": "npm:jspm-nodelibs-fs@0.2.0",
     "http": "npm:jspm-nodelibs-http@0.2.0",
     "https": "npm:jspm-nodelibs-https@0.2.1",
+    "immutability-helper": "npm:immutability-helper@2.1.1",
     "os": "npm:jspm-nodelibs-os@0.2.0",
     "path": "npm:jspm-nodelibs-path@0.2.1",
     "process": "npm:jspm-nodelibs-process@0.2.0",
@@ -556,6 +557,11 @@ SystemJS.config({
         "html5shiv": "npm:html5shiv@3.7.3",
         "es6-shim": "npm:es6-shim@0.35.2",
         "react-dnd": "npm:react-dnd@2.1.4"
+      }
+    },
+    "npm:immutability-helper@2.1.1": {
+      "map": {
+        "invariant": "npm:invariant@2.2.2"
       }
     }
   }
