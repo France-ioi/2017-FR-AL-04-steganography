@@ -5,49 +5,10 @@ import EpicComponent from 'epic-component';
 
 import {applyUnary, applyBinary} from './utils';
 
-const THUMBNAILS_COUNT = 4;
-const IMAGE_WIDTH = 400;
-const IMAGE_HEIGHT = 400;
-const THUMB_WIDTH = 100;
-const THUMB_HEIGHT = 100;
-
-const OPERATIONS = [
-  {
-    name: "noOp",
-    description: "Select operation",
-    numParams: 0
-  },
-  {
-    name: "negate",
-    description: "Negate image",
-    numParams: 1
-  },
-  {
-    name: "extractRed",
-    description: "Extract Red",
-    numParams: 1
-  },
-  {
-    name: "extractGreen",
-    description: "Extract Green",
-    numParams: 1
-  },
-  {
-    name: "extractBlue",
-    description: "Extract Blue",
-    numParams: 1
-  },
-  {
-    name: "mean",
-    description: "Average two images",
-    numParams: 2
-  },
-  {
-    name: "subtract",
-    description: "Subtract an image from another",
-    numParams: 2
-  }
-];
+import {
+  THUMBNAILS_COUNT, IMAGE_WIDTH, IMAGE_HEIGHT,
+  THUMB_WIDTH, THUMB_HEIGHT, OPERATIONS
+} from './constants';
 
 // A canvas tag. props:
 // load (whether the initial images are ready),
