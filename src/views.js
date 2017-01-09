@@ -65,8 +65,13 @@ export const CanvasImage = EpicComponent(self => {
     if(!self.props.load) {
       return;
     }
-    let ctx = self.refs.canvas.getContext('2d');
-    let tempCtx = document.getElementById("tempCanvas").getContext('2d');
+    const ctx = self.refs.canvas.getContext('2d');
+
+    // Render into a temporary canvas.
+    const canvas = document.createElement('canvas');
+    canvas.width = IMAGE_WIDTH;
+    canvas.height = IMAGE_HEIGHT;
+    const tempCtx = canvas.getContext('2d');
 
     function treeToImageData(tree) {
       // TODO should this function be memoized? i.e. save all data in View state.
@@ -452,7 +457,6 @@ export const View = actions => EpicComponent(self => {
     const {currentImageIndex, currentScrollIndex, stagedImages} = self.state;
     return (
       <div>
-        <canvas id="tempCanvas" width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{display: "none"}}/>
         <table>
           <tbody>
             <tr>
