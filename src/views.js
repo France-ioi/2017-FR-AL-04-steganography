@@ -114,7 +114,7 @@ export const CanvasImage = EpicComponent(self => {
     }
     else {
       width = IMAGE_WIDTH;
-      height: IMAGE_HEIGHT;
+      height = IMAGE_HEIGHT;
     }
     return <canvas width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{width: width, height: height}} ref="canvas"/>;
   };
