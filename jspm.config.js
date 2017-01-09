@@ -46,7 +46,7 @@ SystemJS.config({
     "crypto": "npm:jspm-nodelibs-crypto@0.2.0",
     "css": "github:systemjs/plugin-css@0.1.32",
     "domain": "npm:jspm-nodelibs-domain@0.2.0",
-    "epic-component": "npm:epic-component@0.3.1",
+    "epic-component": "npm:epic-component@1.1.0",
     "epic-linker": "npm:epic-linker@1.1.0",
     "events": "npm:jspm-nodelibs-events@0.2.0",
     "font-awesome": "npm:font-awesome@4.7.0",
@@ -223,22 +223,13 @@ SystemJS.config({
     },
     "npm:jspm-nodelibs-http@0.2.0": {
       "map": {
-        "http-browserify": "npm:stream-http@2.5.0"
+        "http-browserify": "npm:stream-http@2.6.0"
       }
     },
     "npm:browserify-zlib@0.1.4": {
       "map": {
         "readable-stream": "npm:readable-stream@2.2.2",
         "pako": "npm:pako@0.2.9"
-      }
-    },
-    "npm:stream-http@2.5.0": {
-      "map": {
-        "inherits": "npm:inherits@2.0.3",
-        "readable-stream": "npm:readable-stream@2.2.2",
-        "to-arraybuffer": "npm:to-arraybuffer@1.0.1",
-        "xtend": "npm:xtend@4.0.1",
-        "builtin-status-codes": "npm:builtin-status-codes@2.0.0"
       }
     },
     "npm:url@0.11.0": {
@@ -562,6 +553,15 @@ SystemJS.config({
     "npm:immutability-helper@2.1.1": {
       "map": {
         "invariant": "npm:invariant@2.2.2"
+      }
+    },
+    "npm:stream-http@2.6.0": {
+      "map": {
+        "inherits": "npm:inherits@2.0.3",
+        "readable-stream": "npm:readable-stream@2.2.2",
+        "xtend": "npm:xtend@4.0.1",
+        "builtin-status-codes": "npm:builtin-status-codes@3.0.0",
+        "to-arraybuffer": "npm:to-arraybuffer@1.0.1"
       }
     }
   }
