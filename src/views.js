@@ -144,72 +144,44 @@ export const CanvasImageContainer = EpicComponent(self => {
 // index - the index to show to the left of the image.
 // load - whether the initial images are ready.
 // selected - is this image currently selected (for border display).
-export const ThumbnailRow = EpicComponent(self => {
+export const Thumbnail = EpicComponent(self => {
   const onClick = function() {
     self.props.onClick(self.props.index);
   };
   self.render = function() {
     const {index, image, load, selected} = self.props;
     return (
-      <tr onClick={onClick}>
-        <td>
+      <div onClick={onClick}>
+        <span className="thumbnail-index">
           {parseInt(index) + 1}
-        </td>
-        <td>
+        </span>
+        <span className="thumbnail-image">
           <CanvasImageContainer size="small" load={load} image={image} selected={selected}/>
-        </td>
-      </tr>
+        </span>
+      </div>
     );
   };
-});
+}, {displayName: 'Thumbnail'});
 
 // The thumbnails on the left. props:
 // images - the trees representing the images (from workspace).
 // currentImageIndex - current image index from View.
-// currentScrollIndex - current scroll index from View.
-// changeImageIndex - function to change the current image index and scroll of View.
+// changeImageIndex - function to change the current image index.
 export const ThumbnailsContainer = EpicComponent(self => {
-  const imageUp = function() {
-    changeImageIndex(-1);
-  };
-  const imageDown = function() {
-    changeImageIndex(1);
-  };
-  const changeImageIndex = function(direction) {
-    const {currentImageIndex} = self.props;
-    self.props.changeImageIndex(parseInt(currentImageIndex) + direction);
-  }
   const clickImage = function(imageIndex) {
     self.props.changeImageIndex(imageIndex);
   };
-
   self.render = function() {
-    const {images, currentScrollIndex, currentImageIndex, load} = self.props;
-    const shownImages = images.slice(currentScrollIndex, currentScrollIndex + THUMBNAILS_COUNT);
+    const {images, currentImageIndex, load} = self.props;
     return (
-      <table>
-        <tbody>
-          <tr>
-            <td></td>
-            <td>
-              <Button onClick={imageUp}>Previous</Button>
-            </td>
-          </tr>
-          {shownImages.map(function(image, index) {
-            const imageIndex = index + currentScrollIndex;
-            return <ThumbnailRow onClick={clickImage} key={image.id} image={image} load={load} selected={imageIndex === currentImageIndex} index={imageIndex}/>;
-          })}
-          <tr>
-            <td></td>
-            <td>
-              <Button onClick={imageDown}>Next</Button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="thumbnails-container">
+        {images.map(function(image, index) {
+          return <Thumbnail onClick={clickImage} key={image.id} image={image} load={load} selected={index === currentImageIndex} index={index}/>;
+        })}
+      </div>
     );
   };
-});
+}, {displayName: 'ThumbnailsContainer'});
 
 // Container of the large image. props:
 // load - whether the initial images have loaded.
@@ -378,8 +350,6 @@ export const View = actions => EpicComponent(self => {
 
   self.state = {
     originalImagesLoaded: false,
-    currentImageIndex: 0,
-    currentScrollIndex: 0,
     stagedImages: [null, null]
   };
 
@@ -390,18 +360,12 @@ export const View = actions => EpicComponent(self => {
   };
 
   const changeImageIndex = function(imageIndex) {
-    let {currentScrollIndex} = self.state;
-    const {workspace} = self.props;
-    const {images} = workspace;
-    let currentImageIndex = imageIndex;
-    currentImageIndex = Math.max(0, Math.min(images.length - 1, currentImageIndex));
-    currentScrollIndex = Math.min(currentScrollIndex, currentImageIndex);
-    currentScrollIndex = Math.max(currentScrollIndex, currentImageIndex - THUMBNAILS_COUNT + 1);
-    self.setState({currentImageIndex, currentScrollIndex});
+    self.props.dispatch({type: actions.currentImageSelected, index: imageIndex});
   };
 
   const updateStage = function(stageIndex) {
-    let {stagedImages, currentImageIndex} = self.state;
+    const {currentImageIndex} = self.props.workspace;
+    let {stagedImages} = self.state;
     const {images} = self.props.workspace;
     stagedImages = stagedImages.slice(0);
     stagedImages[stageIndex] = images[currentImageIndex];
@@ -432,7 +396,8 @@ export const View = actions => EpicComponent(self => {
   };
 
   const deleteImage = function() {
-    let {stagedImages, currentImageIndex} = self.state;
+    const {currentImageIndex} = self.props.workspace;
+    let {stagedImages} = self.state;
     const {images} = self.props.workspace;
     stagedImages = stagedImages.slice(0);
     for(let index = 0; index < stagedImages.length; index++) {
@@ -452,16 +417,18 @@ export const View = actions => EpicComponent(self => {
 
   self.render = function () {
     const {task, workspace} = self.props;
-    const {images, originalImagesLoaded} = workspace;
+    const {images, originalImagesLoaded, currentImageIndex} = workspace;
     const {originalImagesURLs} = task;
-    const {currentImageIndex, currentScrollIndex, stagedImages} = self.state;
+    const {stagedImages} = self.state;
     return (
       <div>
         <table>
           <tbody>
             <tr>
               <td>
-                <ThumbnailsContainer load={originalImagesLoaded} images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex} currentScrollIndex={currentScrollIndex}/>
+                <div style={{maxHeight: (THUMBNAILS_COUNT * THUMB_HEIGHT)+'px', overflowY: 'scroll'}}>
+                  <ThumbnailsContainer load={originalImagesLoaded} images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
+                </div>
               </td>
               <td>
                 <BigImageContainer load={originalImagesLoaded} image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={deleteImage}/>

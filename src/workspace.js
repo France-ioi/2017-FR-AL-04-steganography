@@ -14,6 +14,7 @@ export default function* (deps) {
   yield defineAction('deleteImage', 'Workspace.DeleteImage');
 
   yield defineAction('imageLoaded', 'Workspace.Image.Loaded');
+  yield defineAction('currentImageSelected', 'Workspace.CurrentImage.Selected');
 
   /* Simple workspace interface: init, dump, load, update, View */
 
@@ -109,6 +110,11 @@ export default function* (deps) {
       changes.workspace.originalImagesLoaded = {$set: true};
     }
     return update(state, changes);
+  });
+
+  yield addReducer('currentImageSelected', function (state, action) {
+    const {index} = action;
+    return update(state, {workspace: {currentImageIndex: {$set: index}}});
   });
 
 };
