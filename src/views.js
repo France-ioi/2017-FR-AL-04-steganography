@@ -349,7 +349,6 @@ export const ActionPanel = EpicComponent(self => {
 export const View = actions => EpicComponent(self => {
 
   self.state = {
-    originalImagesLoaded: false,
     stagedImages: [null, null]
   };
 
