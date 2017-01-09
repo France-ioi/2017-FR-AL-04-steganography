@@ -392,7 +392,7 @@ export const View = actions => EpicComponent(self => {
     currentImageIndex = Math.max(0, Math.min(images.length - 1, currentImageIndex));
     currentScrollIndex = Math.min(currentScrollIndex, currentImageIndex);
     currentScrollIndex = Math.max(currentScrollIndex, currentImageIndex - THUMBNAILS_COUNT + 1);
-    self.setState({...self.state, currentImageIndex, currentScrollIndex});
+    self.setState({currentImageIndex, currentScrollIndex});
   };
 
   const updateStage = function(stageIndex) {
@@ -400,7 +400,7 @@ export const View = actions => EpicComponent(self => {
     const {images} = self.props.workspace;
     stagedImages = stagedImages.slice(0);
     stagedImages[stageIndex] = images[currentImageIndex];
-    self.setState({...self.state, stagedImages});
+    self.setState({stagedImages});
   };
 
   const applyOperation = function(index) {
@@ -435,7 +435,7 @@ export const View = actions => EpicComponent(self => {
         stagedImages[index] = null;
       }
     }
-    self.setState({...self.state, stagedImages});
+    self.setState({stagedImages});
     // TODO where to scroll after deleting? How to do this safely
     // while also dispatching an action?
     changeImageIndex(0);
