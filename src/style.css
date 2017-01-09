@@ -1,0 +1,19 @@
+.selected {
+    border: 4px solid blue;
+    display: inline-block;
+}
+.unselected {
+    border: 1px solid black;
+    display: inline-block;
+}
+.stageImageContainer, .previewImageContainer {
+    display: inline-block;
+}
+
+.previewImageContainer {
+    margin-left: 40px;
+}
+
+.actionPanelContainer {
+    text-align: center;
+}
