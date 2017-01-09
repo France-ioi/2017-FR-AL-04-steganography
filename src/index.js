@@ -15,7 +15,8 @@ import 'rc-tooltip/assets/bootstrap.css!';
 import '2017-fr-al-04-steganography.css/style.css!';
 
 export function run (options) {
-   if (process.env.NODE_ENV === 'development') {
+   const isDev = process.env.NODE_ENV === 'development';
+   if (isDev) {
       SourceMapSupport.install();
    }
    hostTask(options, function* (deps) {
@@ -40,6 +41,11 @@ export function run (options) {
       /* The workspace is the view that can be used by the contestant to solve
          the task. */
       yield include(Workspace);
+
+      const reduxExt = window.__REDUX_DEVTOOLS_EXTENSION__;
+      if (isDev && reduxExt) {
+         yield addEnhancer(reduxExt());
+      }
 
    });
 };
