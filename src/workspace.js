@@ -159,7 +159,6 @@ export default function* (deps) {
       return image;
     }
     if ('index' in image) {
-      console.log('deepUpdateCanvas', image, index);
       // If an image with matching index is found, set its canvas.
       return image.index === index ? {...image, canvas} : image;
     }
