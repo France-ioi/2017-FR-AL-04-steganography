@@ -1,3 +1,6 @@
+
+import {OPERATIONS} from './constants';
+
 function unaryNegate(v1, channel) {
   return 255 - v1;
 }
@@ -32,7 +35,7 @@ const operatorToFunc = {
   extractBlue: unaryExtractChannel(2)
 };
 
-export function applyUnary(sourceData, destData, operation) {
+function applyUnary(sourceData, destData, operation) {
   let func = operatorToFunc[operation];
   for (var iPix = 0; iPix < sourceData.data.length; iPix++) {
     var v = 255;
@@ -44,7 +47,7 @@ export function applyUnary(sourceData, destData, operation) {
   }
 };
 
-export function applyBinary(sourceData1, sourceData2, destData, operation) {
+function applyBinary(sourceData1, sourceData2, destData, operation) {
   let func = operatorToFunc[operation];
   for (var iPix = 0; iPix < sourceData1.data.length; iPix++) {
     var v = 255;
@@ -55,4 +58,23 @@ export function applyBinary(sourceData1, sourceData2, destData, operation) {
     }
     destData.data[iPix] = v;
   }
+};
+
+export function applyOperation(name, args, destData) {
+  const numParams = args.length;
+  if (numParams === 1) {
+    return applyUnary(args[0], destData, name);
+  }
+  if (numParams === 2) {
+    return applyBinary(args[0], args[1], destData, name);
+  }
+};
+
+export function findOperationByName(name) {
+  for (let op of OPERATIONS) {
+    if (op.name === name) {
+      return op;
+    }
+  }
+  return null;
 };

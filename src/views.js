@@ -3,121 +3,65 @@ import React from 'react';
 import {Button} from 'react-bootstrap';
 import EpicComponent from 'epic-component';
 
-import {applyUnary, applyBinary} from './utils';
-
 import {
   THUMBNAILS_COUNT, IMAGE_WIDTH, IMAGE_HEIGHT,
   THUMB_WIDTH, THUMB_HEIGHT, OPERATIONS
 } from './constants';
 
 // A canvas tag. props:
-// load (whether the initial images are ready),
 // image (binary tree representation of image operations).
 export const CanvasImage = EpicComponent(self => {
-
-
-  self.componentDidMount = function() {
-    updateCanvas();
-  };
-  self.componentDidUpdate = function() {
-    updateCanvas();
-  };
-  const updateCanvas = function() {
-    if(!self.props.load) {
-      return;
-    }
-    const ctx = self.refs.canvas.getContext('2d');
-
-    // Render into a temporary canvas.
-    const canvas = document.createElement('canvas');
-    canvas.width = IMAGE_WIDTH;
-    canvas.height = IMAGE_HEIGHT;
-    const tempCtx = canvas.getContext('2d');
-
-    function treeToImageData(tree) {
-      // TODO should this function be memoized? i.e. save all data in View state.
-      const {operation, operationType, first, second, id} = tree;
-      let imageData, sourceData, sourceData1, sourceData2, destData;
-      switch(operationType) {
-        case "image":
-          tempCtx.drawImage(tree.element, 0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-          destData = tempCtx.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-          break;
-        case "unary":
-          sourceData = treeToImageData(tree.first);
-          destData = tempCtx.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-          applyUnary(sourceData, destData, operation);
-          break;
-        case "binary":
-          sourceData1 = treeToImageData(tree.first);
-          sourceData2 = treeToImageData(tree.second);
-          destData = tempCtx.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-          applyBinary(sourceData1, sourceData2, destData, operation);
-          break;
-        default:
-          throw "Unknown operation type";
-      }
-      return destData;
-    }
-    if(self.props.image) {
-      ctx.putImageData(treeToImageData(self.props.image), 0, 0);
-    }
-    else {
-      ctx.clearRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
-    }
-  };
   self.render = function () {
+    const {image, size} = self.props;
     let width;
     let height;
-    if(self.props.size == "small") {
+    if (size === "small") {
       width = THUMB_WIDTH;
       height = THUMB_HEIGHT;
-    }
-    else {
+    } else {
       width = IMAGE_WIDTH;
       height = IMAGE_HEIGHT;
     }
-    return <canvas width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{width: width, height: height}} ref="canvas"/>;
+    if (!image) {
+      return <div style={{width: width+'px', height: height+'px'}}>no image</div>;
+    }
+    return <img src={image.src} width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{width: width+'px', height: height+'px'}}/>;
   };
-});
+}, {displayName: 'CanvasImage'});
 
 // Container for a canvas image. props:
 // size - big or small.
 // selected - whether to display a thick border.
 // image - the image tree object.
-// load - whether the initial images are ready.
 export const CanvasImageContainer = EpicComponent(self => {
   self.render = function() {
     const {selected, image, size, load} = self.props;
-    let className;
-    if(selected) {
-      className = "selected";
-    }
-    else {
-      className = "unselected";
-    }
-    return <div className={className}><CanvasImage image={image} load={load} size={size}/></div>;
+    const className = selected ? "selected" : "unselected";
+    return (
+      <div className={className}>
+        <CanvasImage image={image} size={size}/>
+      </div>
+    );
   };
-});
+}, {displayName: 'CanvasImageContainer'});
 
-// One of the thumbnail rows on the left. props:
+// One of the thumbnail on the left. props:
 // image - the tree representing this image.
 // index - the index to show to the left of the image.
-// load - whether the initial images are ready.
 // selected - is this image currently selected (for border display).
 export const Thumbnail = EpicComponent(self => {
   const onClick = function() {
     self.props.onClick(self.props.index);
   };
   self.render = function() {
-    const {index, image, load, selected} = self.props;
+    const {index, image, selected} = self.props;
     return (
       <div onClick={onClick}>
         <span className="thumbnail-index">
           {parseInt(index) + 1}
         </span>
         <span className="thumbnail-image">
-          <CanvasImageContainer size="small" load={load} image={image} selected={selected}/>
+          <CanvasImageContainer size="small" image={image} selected={selected}/>
         </span>
       </div>
     );
@@ -125,8 +69,8 @@ export const Thumbnail = EpicComponent(self => {
 }, {displayName: 'Thumbnail'});
 
 // The thumbnails on the left. props:
-// images - the trees representing the images (from workspace).
-// currentImageIndex - current image index from View.
+// images - list of images.
+// currentImageIndex - current image index.
 // changeImageIndex - function to change the current image index.
 export const ThumbnailsContainer = EpicComponent(self => {
   const clickImage = function(imageIndex) {
@@ -137,7 +81,7 @@ export const ThumbnailsContainer = EpicComponent(self => {
     return (
       <div className="thumbnails-container">
         {images.map(function(image, index) {
-          return <Thumbnail onClick={clickImage} key={image.id} image={image} load={load} selected={index === currentImageIndex} index={index}/>;
+          return <Thumbnail onClick={clickImage} key={index} image={image} selected={index === currentImageIndex} index={index}/>;
         })}
       </div>
     );
@@ -145,29 +89,25 @@ export const ThumbnailsContainer = EpicComponent(self => {
 }, {displayName: 'ThumbnailsContainer'});
 
 // Container of the large image. props:
-// load - whether the initial images have loaded.
-// image - the image tree to show.
+// image - the image show.
 // showDelete - show delete button.
 // deleteImage - to call on click.
 export const BigImageContainer = EpicComponent(self => {
   self.render = function() {
-    const {load, image} = self.props;
+    const {image, showDelete} = self.props;
     return (
       <div>
-        <CanvasImageContainer load={load} image={image} selected={false} size="big"/>
+        <CanvasImageContainer image={image} selected={false} size="big"/>
         <br/>
-        {renderDelete()}
+        {showDelete && renderDelete()}
       </div>
     );
   };
   const renderDelete = function() {
-    const {showDelete, deleteImage} = self.props;
-    if(!showDelete) {
-      return null;
-    }
+    const {deleteImage} = self.props;
     return <Button onClick={deleteImage}>Delete</Button>;
-  }
-});
+  };
+}, {displayName: 'BigImageContainer'});
 
 // Operation list. props:
 // onChange - function to call when operation is selectd.
@@ -186,7 +126,7 @@ export const OperationList = EpicComponent(self => {
       </select>
     );
   };
-});
+}, {displayName: 'OperationList'});
 
 // Stage "Set" button. props:
 // index: stage index (0 or 1).
@@ -198,43 +138,34 @@ export const StageButton = EpicComponent(self => {
   self.render = function() {
     return <Button onClick={onClick}>Set</Button>;
   };
-});
+}, {displayName: 'StageButton'});
 
 // Panel for operations below the big image. props:
-// load - whether initial images are loaded.
+// operationIndex - index of selected operation.
 // stagedImages - images selected for operation.
-// updateStage - function to update a staged slot to the current image, in View state.
-// applyOperation - function to apply an operation on the images.
+// resultImage - the image computed from (operationIndex, stagedImages)
+// onSetStagedImage - function to update a staged slot to the current image.
+// onSetOperation - function to change the selected operation.
+// onAddImage - function to add the result image to the list of images.
 export const ActionPanel = EpicComponent(self => {
-  self.state = {
-    selectedIndex: 0
-  };
-  const changeOperation = function(index) {
-    self.setState({...self.state, selectedIndex: index});
-  }
-  const onStageClick = function(index) {
-    self.props.updateStage(index);
-  };
-  const onAddClick = function() {
-    self.props.applyOperation(self.state.selectedIndex);
-  };
+
   self.render = function() {
-    const {selectedIndex} = self.state;
+    const {operationIndex, onSetOperation} = self.props;
+    const showPreview = operationIndex !== 0;
     return (
       <div>
-        <OperationList onChange={changeOperation} selectedIndex={selectedIndex}/>
+        <OperationList onChange={onSetOperation} selectedIndex={operationIndex}/>
         <br/>
         {renderStage()}
-        {renderPreview()}
+        {showPreview && renderPreview()}
       </div>
     );
   };
 
   const renderStage = function() {
-    const {selectedIndex} = self.state;
-    const {load} = self.props;
-    const operation = OPERATIONS[selectedIndex];
-    let stagedImages = self.props.stagedImages.slice(0, operation.numParams);
+    const {operationIndex, onSetStagedImage} = self.props;
+    const operation = OPERATIONS[operationIndex];
+    const stagedImages = self.props.stagedImages.slice(0, operation.numParams);
     return (
       <table className="stageImageContainer">
         <tbody>
@@ -242,9 +173,9 @@ export const ActionPanel = EpicComponent(self => {
           {stagedImages.map(function(image, index) {
             return (
               <td key={index}>
-                <CanvasImageContainer size="small" load={load} selected={false} image={image}/>
+                <CanvasImageContainer size="small" selected={false} image={image}/>
                 <br/>
-                <StageButton index={index} onClick={onStageClick}/>
+                <StageButton index={index} onClick={onSetStagedImage}/>
               </td>
             );
           })}
@@ -254,132 +185,59 @@ export const ActionPanel = EpicComponent(self => {
     );
   };
 
-  const createPreviewTree = function() {
-    const {selectedIndex} = self.state;
-    const {stagedImages} = self.props;
-    const operation = OPERATIONS[selectedIndex];
-    for(let stageIndex = 0; stageIndex < operation.numParams; stageIndex++) {
-      if(stagedImages[stageIndex] === null) {
-        return null;
-      }
-    }
-    let operationType;
-    if(operation.numParams === 1) {
-      operationType = "unary";
-    }
-    else {
-      operationType = "binary";
-    }
-    return {
-      operationType,
-      operation: operation.name,
-      first: stagedImages[0],
-      second: stagedImages[1],
-      id: "preview"
-    };
-  };
-
   const renderPreview = function() {
-    const {selectedIndex} = self.state;
-    const {load, stagedImages} = self.props;
-    const operation = OPERATIONS[selectedIndex];
-    if(selectedIndex === 0) {
-      return null;
-    }
-
-    // TODO where should the preview be generated?
-    // Here it leaks an object that didn't exist before.
-    const previewImage = createPreviewTree();
-
+    const {resultImage, onAddImage} = self.props;
     return (
       <table className="previewImageContainer">
         <tbody>
           <tr>
             <td>
-              <CanvasImageContainer size="small" load={load} selected={false} image={previewImage}/>
+              <CanvasImageContainer size="small" selected={false} image={resultImage}/>
               <br/>
-              <Button onClick={onAddClick}>Add</Button>
+              <Button onClick={onAddImage}>Add</Button>
             </td>
           </tr>
         </tbody>
       </table>
     );
   };
-});
+}, {displayName: 'ActionPanel'});
 
 export const View = actions => EpicComponent(self => {
 
-  self.state = {
-    stagedImages: [null, null]
-  };
-
   const onImageLoad = function(event) {
     const element = event.target;
-    const index = element.getAttribute('data-index');
+    const index = parseInt(element.getAttribute('data-index'));
     self.props.dispatch({type: actions.imageLoaded, index, element});
   };
 
   const changeImageIndex = function(imageIndex) {
-    self.props.dispatch({type: actions.currentImageSelected, index: imageIndex});
+    self.props.dispatch({type: actions.imageSelected, index: imageIndex});
   };
 
-  const updateStage = function(stageIndex) {
-    const {currentImageIndex} = self.props.workspace;
-    let {stagedImages} = self.state;
-    const {images} = self.props.workspace;
-    stagedImages = stagedImages.slice(0);
-    stagedImages[stageIndex] = images[currentImageIndex];
-    self.setState({stagedImages});
+  const onSetOperation = function (operationIndex) {
+    self.props.dispatch({type: actions.operationChanged, index: operationIndex});
   };
 
-  const applyOperation = function(index) {
-    const {stagedImages} = self.state;
-    const operation = OPERATIONS[index];
-    let operationType;
-    if(operation.numParams === 1) {
-      operationType = "unary";
-    }
-    else {
-      operationType = "binary";
-    }
-    self.props.dispatch({
-      type: actions.addImage,
-      operation: operation.name,
-      operationType,
-      first: stagedImages[0],
-      second: stagedImages[1]
-    });
-
-    // TODO how to scroll to the newly generated image?
-    // The following line happens before the insertion.
-    // changeImageIndex(self.props.workspace.images.length - 1);
+  const onSetStagedImage = function (slotIndex) {
+    const imageIndex = self.props.workspace.currentImageIndex;
+    self.props.dispatch({type: actions.stagedImageChanged, slotIndex: slotIndex, imageIndex: imageIndex});
   };
 
-  const deleteImage = function() {
-    const {currentImageIndex} = self.props.workspace;
-    let {stagedImages} = self.state;
-    const {images} = self.props.workspace;
-    stagedImages = stagedImages.slice(0);
-    for(let index = 0; index < stagedImages.length; index++) {
-      if(stagedImages[index] === images[currentImageIndex]) {
-        stagedImages[index] = null;
-      }
-    }
-    self.setState({stagedImages});
-    // TODO where to scroll after deleting? How to do this safely
-    // while also dispatching an action?
-    changeImageIndex(0);
-    self.props.dispatch({
-      type: actions.deleteImage,
-      index: currentImageIndex
-    });
+  const onAddImage = function () {
+    const image = self.props.workspace.resultImage;
+    self.props.dispatch({type: actions.imageAdded, image: self.props.workspace.resultImage});
+  };
+
+  const onDeleteImage = function () {
+    const imageIndex = self.props.workspace.currentImageIndex;
+    self.props.dispatch({type: actions.imageDeleted, index: imageIndex});
   };
 
   self.render = function () {
     const {task, workspace} = self.props;
-    const {images, originalImagesLoaded, currentImageIndex} = workspace;
+    const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage} = workspace;
     const {originalImagesURLs} = task;
-    const {stagedImages} = self.state;
     return (
       <div>
         <table>
@@ -387,16 +245,18 @@ export const View = actions => EpicComponent(self => {
             <tr>
               <td>
                 <div style={{maxHeight: (THUMBNAILS_COUNT * THUMB_HEIGHT)+'px', overflowY: 'scroll'}}>
-                  <ThumbnailsContainer load={originalImagesLoaded} images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
+                  <ThumbnailsContainer images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
                 </div>
               </td>
               <td>
-                <BigImageContainer load={originalImagesLoaded} image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={deleteImage}/>
+                <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
               </td>
             </tr>
             <tr>
               <td colSpan="2" className="actionPanelContainer">
-                <ActionPanel stagedImages={stagedImages} updateStage={updateStage} applyOperation={applyOperation} load={originalImagesLoaded}/>
+                <ActionPanel
+                  operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
+                  onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} />
               </td>
             </tr>
           </tbody>
@@ -409,6 +269,5 @@ export const View = actions => EpicComponent(self => {
         </div>
       </div>
     );
-    // <CanvasImage image={{operationType: "binary", operation: "subtract", first: {operationType: "unary", id: 17, first: {operationType: "image", id: 0}, operation: "extractRed"}, second: {operationType: "image", id:1}}} load={self.state.originalImagesLoaded} />
   };
-});
+}, {displayName: 'View'});

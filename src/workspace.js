@@ -5,64 +5,64 @@ import WorkspaceBuilder from 'alkindi-task-lib/simple_workspace';
 import update from 'immutability-helper';
 
 import {View} from './views';
+import {OPERATIONS, IMAGE_WIDTH, IMAGE_HEIGHT} from './constants';
+import {findOperationByName, applyOperation} from './utils';
 
 export default function* (deps) {
 
   /* Actions dispatched by the workspace */
 
-  yield defineAction('addImage', 'Workspace.AddImage');
-  yield defineAction('deleteImage', 'Workspace.DeleteImage');
-
   yield defineAction('imageLoaded', 'Workspace.Image.Loaded');
-  yield defineAction('currentImageSelected', 'Workspace.CurrentImage.Selected');
+  yield defineAction('imageAdded', 'Workspace.Image.Added');
+  yield defineAction('imageDeleted', 'Workspace.Image.Deleted');
+  yield defineAction('imageSelected', 'Workspace.Image.Selected');
+  yield defineAction('operationChanged', 'Workspace.Operation.Changed');
+  yield defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
 
   /* Simple workspace interface: init, dump, load, update, View */
 
   const init = function (task) {
-    const {originalImagesURLs} = task;
-    let images =[];
-    for(let index = 0; index < originalImagesURLs.length; index++) {
-      let imageURL = originalImagesURLs[index];
-      let image = {
-        operationType: "image",
-        operation: null,
-        first: null,
-        second: null,
-        id: index
-      };
-      images.push(image);
-    }
-    return {
-      images,
-      nextID: images.length,
-      nOriginalImagesLoaded: 0,
-      originalImagesLoaded: false
-    };
+    return updateWorkspace(task, {
+      images: [],
+      currentImageIndex: 0,
+      currentOperationIndex: 0,
+      stagedImages: [null, null]
+    });
   };
 
   const dump = function (workspace) {
-    // Extract the smallest part of the workspace that is needed to rebuild it.
-    const {images, nextID} = workspace;
-    return {images: images.map(dumpImage), nextID};
+    // Dump computed images.
+    const {images} = workspace;
+    const imageDumps = [];
+    for (let image of workspace.images) {
+      if ('operation' in image) {
+        imageDumps.push(dumpImage(image));
+      }
+    }
+    return {images: imageDumps};
   };
-  function dumpImage (image) {
-    const {operationType, operation, first, second} = image;
-    return {operationType, operation, first, second};
-  }
 
   const load = function (dump) {
     // Use a saved dump to rebuild a workspace.  Any computation that depends
     // on the task is done in update.
-    const {images, nextID} = dump;
-    return {images: images.map(loadImage), nextID};
+    const {images} = dump;
+    return {images: images.map(loadImage)};
   };
-  function loadImage (image, id) {
-    const {operationType, operation, first, second} = image;
-    return {operationType, operation, first, second, id};
-  }
 
   const updateWorkspace = function (task, workspace) {
-    return {...workspace};
+    // Remove the task images, clearing the cached canvas in image expressions
+    // to force it to be re-computed.
+    const images = [];
+    for (let image of workspace.images) {
+      if ('operation' in image) {
+        images.push(deepClearCanvas(image));
+      }
+    }
+    // Prepend the task's images.
+    images.splice(0, 0, ...task.originalImagesURLs.map(function (src, index) {
+      return {index, src};
+    }));
+    return {...workspace, images};
   };
 
   yield include(WorkspaceBuilder({init, dump, load, update: updateWorkspace, View: View(deps)}));
@@ -71,50 +71,162 @@ export default function* (deps) {
     Add reducers for workspace actions and any needed sagas below:
   */
 
-  // Add an image based on previous images.
-  yield addReducer('addImage', function (state, action) {
-    const {first, second, operationType, operation} = action;
-    let {workspace} = state;
-    let {images, nextID} = workspace;
-    let image = {operationType, operation, first, second, id: nextID};
-    images = [...images, image];
-    nextID++;
-    workspace = {...workspace, images, nextID};
-    return {...state, workspace};
-  });
-
-  // Update the key so that the plain word appears at a specific position in
-  // the deciphered text.
-  yield addReducer('deleteImage', function (state, action) {
-    const {index} = action;
-    let {workspace} = state;
-    let {images} = workspace;
-    images = images.slice(0);
-    images.splice(index, 1);
-    workspace = {...workspace, images};
-    return {...state, workspace};
-  });
-
   yield addReducer('imageLoaded', function (state, action) {
     const {index, element} = action;
-    // state.workspace.images[index].element = element
-    console.log("loaded", index, element);
-    const nOriginalImagesLoaded = state.workspace.nOriginalImagesLoaded + 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = IMAGE_WIDTH;
+    canvas.height = IMAGE_HEIGHT;
+    const context = canvas.getContext('2d');
+    context.drawImage(element, 0, 0);
+    const images = state.workspace.images.map(image => deepUpdateCanvas(image, index, canvas));
     const changes = {
       workspace: {
-        images: {[index]: {element: {$set: element}}},
-        nOriginalImagesLoaded: {$set: nOriginalImagesLoaded}
+        images: {$set: images}
       }
     };
-    if (nOriginalImagesLoaded == state.workspace.images.length) {
-      changes.workspace.originalImagesLoaded = {$set: true};
-    }
     return update(state, changes);
   });
 
-  yield addReducer('currentImageSelected', function (state, action) {
+  yield addReducer('imageSelected', function (state, action) {
     const {index} = action;
     return update(state, {workspace: {currentImageIndex: {$set: index}}});
   });
+
+  yield addReducer('imageAdded', function (state, action) {
+    const {image} = action;
+    const newIndex = state.workspace.images.length;
+    return update(state, {
+      workspace: {
+        images: {$push: [image]},
+        currentImageIndex: {$set: newIndex}
+      }
+    });
+  });
+
+  yield addReducer('imageDeleted', function (state, action) {
+    const {index} = action;
+    // When deleting the last image, make the previous current.
+    const newLength = state.workspace.images.length - 1;
+    function updateIndex (other) {
+      return other === newLength ? other - 1 : other;
+    }
+    return update(state, {
+      workspace: {
+        images: {$splice: [[index, 1]]},
+        currentImageIndex: {$apply: updateIndex}
+      }
+    });
+  });
+
+  yield addReducer('operationChanged', function (state, action) {
+    const {index} = action;
+    const operation = OPERATIONS[index];
+    const operands = state.workspace.stagedImages;
+    const resultImage = computeImage({operation, operands});
+    return update(state, {
+      workspace: {
+        currentOperationIndex: {$set: index},
+        resultImage: {$set: resultImage}
+      }
+    });
+  });
+
+  yield addReducer('stagedImageChanged', function (state, action) {
+    const {workspace} = state;
+    const {slotIndex, imageIndex} = action;
+    const stagedImages = workspace.stagedImages.slice();
+    stagedImages[slotIndex] = workspace.images[imageIndex];
+    const operation = OPERATIONS[workspace.currentOperationIndex];
+    const resultImage = computeImage({operation, operands: stagedImages});
+    return update(state, {
+      workspace: {
+        stagedImages: {$set: stagedImages},
+        resultImage: {$set: resultImage}
+      }
+    });
+  });
+
+  function deepClearCanvas (image) {
+    if (image.canvas) {
+      return {...image, canvas: undefined, src: undefined};
+    }
+    return image;
+  }
+
+  function deepUpdateCanvas (image, index, canvas) {
+    // Do nothing if the image already has a canvas.
+    if (image.canvas) {
+      return image;
+    }
+    if ('index' in image) {
+      console.log('deepUpdateCanvas', image, index);
+      // If an image with matching index is found, set its canvas.
+      return image.index === index ? {...image, canvas} : image;
+    }
+    // Update operands recursively, then attempt to compute the image.
+    const operands = image.operands.map(function (image) {
+      return deepUpdateCanvas(image, index, canvas);
+    });
+    return computeImage({...image, operands});
+  }
+
+  /*
+    An image dump is of one of these forms:
+      {index}
+      {operation: 'name', operands: [...dumps]}
+  */
+  function dumpImage (image) {
+    if ('index' in image) {
+      return {index: image.index};
+    } else {
+      const {operation, operands} = image;
+      return {operation: operation.name, operands: operands.map(dumpImage)};
+    }
+  }
+
+  function loadImage (dump) {
+    if ('index' in dump) {
+      const {index} = dump;
+      return {index}; // src is set in updateWorkspace()
+    } else {
+      const operation = findOperationByName(dump.operation);
+      const operands = dump.operands.map(loadImage);
+      return {operation, operands}; // computation occurs in imageLoaded reducer
+    }
+  }
+
+  function computeImage (image) {
+    // Trim operands to length.
+    let {operation, operands} = image;
+    const {name, numParams} = operation;
+    operands = operands.slice(0, numParams);
+    if (operands.length < numParams) {
+      return image;
+    }
+    // Extract image data for each operand.
+    const args = [];
+    for (let index = 0; index < operands.length; index++) {
+      const operand = operands[index];
+      if (!operand || !operand.canvas) {
+        return image;
+      }
+      const sourceContext = operand.canvas.getContext('2d');
+      args.push(sourceContext.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT));
+    }
+    // Create a new canvas to compute the result of the operation.
+    const canvas = document.createElement('canvas');
+    canvas.width = IMAGE_WIDTH;
+    canvas.height = IMAGE_HEIGHT;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+    const resultData = context.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
+    // Apply the operation.
+    applyOperation(name, args, resultData);
+    // Write the ImageData into the canvas.
+    context.putImageData(resultData, 0, 0);
+    // Build the data-URL used to display the image.
+    const src = canvas.toDataURL('image/png');
+    return {...image, operands, canvas, src};
+  }
 
 };

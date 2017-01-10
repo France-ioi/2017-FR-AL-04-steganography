@@ -1,5 +1,5 @@
 
-import {defineSelector, defineView, include} from 'epic-linker';
+import {defineSelector, defineView, include, addEnhancer} from 'epic-linker';
 import {hostTask} from 'alkindi-task-lib';
 
 import process from 'process';
@@ -17,7 +17,7 @@ import '2017-fr-al-04-steganography.css/style.css!';
 export function run (options) {
    const isDev = process.env.NODE_ENV === 'development';
    if (isDev) {
-      SourceMapSupport.install();
+      // SourceMapSupport.install();
    }
    hostTask(options, function* (deps) {
 
