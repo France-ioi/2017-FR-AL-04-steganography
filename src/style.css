@@ -1,19 +1,97 @@
-.selected {
-    border: 4px solid blue;
-    display: inline-block;
+#task {
+	margin: 10px;
 }
-.unselected {
-    border: 1px solid black;
-    display: inline-block;
+.taskContent {
 }
-.stageImageContainer, .previewImageContainer {
-    display: inline-block;
+.taskContent img,
+.taskContent .noImage {
+	border: 1px solid #ccc;
+	box-sizing: content-box;
+	display: block;
+}
+.thumbnails-container-wrapper,
+.imageAndActionPanel {
+	float: left;
+	vertical-align: top;
+}
+.thumbnails-container-wrapper {
+	text-align: center;
+	padding-right: 10px;
+	overflow-y: scroll;
+	max-height: 780px;
+}
+.imageAndActionPanel {
+	padding-left: 10px;
+	width: 550px;
 }
 
-.previewImageContainer {
-    margin-left: 40px;
+.thumbnail {
+	margin-bottom: 5px;
+}
+.thumbnail.selected {
+	background-color: #ccc;
+}
+
+.bigImageContainer .image-name {
+	font-weight: bold;
+	text-align: center;
+	margin-bottom: 10px;
+	font-size: 1.5em;
+}
+.bigImageContainer img {
+	margin: 0 auto;
+	box-shadow: 1px 1px 6px #ccc;
 }
 
 .actionPanelContainer {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 10px;
+}
+.actionLabel {
+	font-weight: normal;
+	margin-bottom: 10px;
+}
+.actionDescription {
+	margin-bottom: 10px;
+}
+.stageImagesContainer,
+.previewImageContainer,
+.stageImageContainer {
+    display: inline-block;
     text-align: center;
+}
+.stageImageContainer + .stageImageContainer {
+	margin-left: 10px;
+}
+.actionPanelContainer .form-control,
+.actionPanelContainer .input-group-addon {
+	line-height: 1;
+	height: auto;
+}
+.actionPanelContainer .form-control {
+	padding: 3px;
+}
+.actionPanelContainer .input-group-addon {
+	padding: 3px 6px;
+}
+.actionPanelContainer img,
+.actionPanelContainer .noImage {
+	margin: 3px auto 10px;
+	display: block;
+}
+.previewImageContainer {
+    margin-left: 80px;
+    position: relative;
+}
+.previewImageContainer::before {
+	content: "\f178";
+	position: absolute;
+	left: -34px;
+	top: 55px;
+	font-size: 32px;
+}
+.previewImageContainer .input-group {
+	width: 180px;
 }

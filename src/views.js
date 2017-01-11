@@ -22,8 +22,8 @@ export const CanvasImage = EpicComponent(self => {
       width = IMAGE_WIDTH;
       height = IMAGE_HEIGHT;
     }
-    if (!image) {
-      return <div style={{width: width+'px', height: height+'px'}}>no image</div>;
+    if (!image || !image.src) {
+      return <div className="noImage" style={{width: width+'px', height: height+'px'}}>no image</div>;
     }
     return <img src={image.src} width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{width: width+'px', height: height+'px'}}/>;
   };
@@ -36,11 +36,8 @@ export const CanvasImage = EpicComponent(self => {
 export const CanvasImageContainer = EpicComponent(self => {
   self.render = function() {
     const {selected, image, size, load} = self.props;
-    const className = selected ? "selected" : "unselected";
     return (
-      <div className={className}>
-        <CanvasImage image={image} size={size}/>
-      </div>
+      <CanvasImage image={image} size={size}/>
     );
   };
 }, {displayName: 'CanvasImageContainer'});
@@ -55,11 +52,14 @@ export const Thumbnail = EpicComponent(self => {
   };
   self.render = function() {
     const {index, image, selected} = self.props;
+    const className = selected ? "selected" : "unselected";
+    const thumbnailClassName = "thumbnail " + className;
     return (
-      <div onClick={onClick}>
+      <div onClick={onClick} className={thumbnailClassName}>
         <span className="thumbnail-index">
           {parseInt(index) + 1}
         </span>
+        <span className="thumbnail-image-name">Image {parseInt(index) + 1}</span>
         <span className="thumbnail-image">
           <CanvasImageContainer size="small" image={image} selected={selected}/>
         </span>
@@ -96,16 +96,15 @@ export const BigImageContainer = EpicComponent(self => {
   self.render = function() {
     const {image, showDelete} = self.props;
     return (
-      <div>
+      <div className="bigImageContainer">
+        <div className="image-name">Image name {showDelete && renderDelete()}</div>
         <CanvasImageContainer image={image} selected={false} size="big"/>
-        <br/>
-        {showDelete && renderDelete()}
       </div>
     );
   };
   const renderDelete = function() {
     const {deleteImage} = self.props;
-    return <Button onClick={deleteImage}>Delete</Button>;
+    return <Button onClick={deleteImage}>Delete <i className="fa fa-times" aria-hidden="true"></i></Button>;
   };
 }, {displayName: 'BigImageContainer'});
 
@@ -153,9 +152,12 @@ export const ActionPanel = EpicComponent(self => {
     const {operationIndex, onSetOperation} = self.props;
     const showPreview = operationIndex !== 0;
     return (
-      <div>
-        <OperationList onChange={onSetOperation} selectedIndex={operationIndex}/>
-        <br/>
+      <div className="actionPanelContainer">
+        <div className="actionLabel">
+          <label>Appliquer un opérateur :&nbsp;</label>
+          <OperationList onChange={onSetOperation} selectedIndex={operationIndex}/>
+        </div>
+        <div className="actionDescription">Description of the operator: Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
         {renderStage()}
         {showPreview && renderPreview()}
       </div>
@@ -167,38 +169,33 @@ export const ActionPanel = EpicComponent(self => {
     const operation = OPERATIONS[operationIndex];
     const stagedImages = self.props.stagedImages.slice(0, operation.numParams);
     return (
-      <table className="stageImageContainer">
-        <tbody>
-          <tr>
+      <div className="stageImagesContainer">
           {stagedImages.map(function(image, index) {
             return (
-              <td key={index}>
+              <div className="stageImageContainer" key={index}>
+                <div className="image-name">Image name</div>
                 <CanvasImageContainer size="small" selected={false} image={image}/>
-                <br/>
                 <StageButton index={index} onClick={onSetStagedImage}/>
-              </td>
+              </div>
             );
           })}
-          </tr>
-        </tbody>
-      </table>
+      </div>
     );
   };
 
   const renderPreview = function() {
     const {resultImage, onAddImage} = self.props;
     return (
-      <table className="previewImageContainer">
-        <tbody>
-          <tr>
-            <td>
-              <CanvasImageContainer size="small" selected={false} image={resultImage}/>
-              <br/>
-              <Button onClick={onAddImage}>Add</Button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div className="previewImageContainer">
+        <div className="input-group">
+          <input type="text" className="form-control" value="TODO default image name" />
+          <span className="input-group-addon">
+            <i className="fa fa-pencil" aria-hidden="true"></i>
+          </span>
+        </div>
+        <CanvasImageContainer size="small" selected={false} image={resultImage}/>
+        <Button onClick={onAddImage}>Add</Button>
+      </div>
     );
   };
 }, {displayName: 'ActionPanel'});
@@ -239,33 +236,21 @@ export const View = actions => EpicComponent(self => {
     const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage} = workspace;
     const {originalImagesURLs} = task;
     return (
-      <div>
-        <table>
-          <tbody>
-            <tr>
-              <td>
-                <div style={{maxHeight: (THUMBNAILS_COUNT * THUMB_HEIGHT)+'px', overflowY: 'scroll'}}>
-                  <ThumbnailsContainer images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
-                </div>
-              </td>
-              <td>
-                <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
-              </td>
-            </tr>
-            <tr>
-              <td colSpan="2" className="actionPanelContainer">
-                <ActionPanel
-                  operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
-                  onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
-        <div style={{display: "none"}}>
-          {originalImagesURLs.map(function(imageURL, imageIndex) {
-            return <img src={imageURL} onLoad={onImageLoad} data-index={imageIndex} key={imageIndex}/>;
-          })}
+      <div className="taskContent">
+        <div className="thumbnails-container-wrapper">
+          <ThumbnailsContainer images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
+        </div>
+        <div className="imageAndActionPanel">
+          <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
+          <ActionPanel
+            operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
+            onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} />
+          {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
+          <div style={{display: "none"}}>
+            {originalImagesURLs.map(function(imageURL, imageIndex) {
+              return <img src={imageURL} onLoad={onImageLoad} data-index={imageIndex} key={imageIndex}/>;
+            })}
+          </div>
         </div>
       </div>
     );
