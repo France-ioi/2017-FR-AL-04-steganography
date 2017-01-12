@@ -56,10 +56,7 @@ export const Thumbnail = EpicComponent(self => {
     const thumbnailClassName = "thumbnail " + className;
     return (
       <div onClick={onClick} className={thumbnailClassName}>
-        <span className="thumbnail-index">
-          {parseInt(index) + 1}
-        </span>
-        <span className="thumbnail-image-name">Image {parseInt(index) + 1}</span>
+        <span className="thumbnail-image-name">{image.name}</span>
         <span className="thumbnail-image">
           <CanvasImageContainer size="small" image={image} selected={selected}/>
         </span>
@@ -97,7 +94,7 @@ export const BigImageContainer = EpicComponent(self => {
     const {image, showDelete} = self.props;
     return (
       <div className="bigImageContainer">
-        <div className="image-name">Image name {showDelete && renderDelete()}</div>
+        <div className="image-name">{image.name} {showDelete && renderDelete()}</div>
         <CanvasImageContainer image={image} selected={false} size="big"/>
       </div>
     );
@@ -146,6 +143,7 @@ export const StageButton = EpicComponent(self => {
 // onSetStagedImage - function to update a staged slot to the current image.
 // onSetOperation - function to change the selected operation.
 // onAddImage - function to add the result image to the list of images.
+// resultName - name for the new image to be added.
 export const ActionPanel = EpicComponent(self => {
 
   self.render = function() {
@@ -173,7 +171,7 @@ export const ActionPanel = EpicComponent(self => {
           {stagedImages.map(function(image, index) {
             return (
               <div className="stageImageContainer" key={index}>
-                <div className="image-name">Image name</div>
+                <div className="image-name">{image && image.name}</div>
                 <CanvasImageContainer size="small" selected={false} image={image}/>
                 <StageButton index={index} onClick={onSetStagedImage}/>
               </div>
@@ -183,12 +181,16 @@ export const ActionPanel = EpicComponent(self => {
     );
   };
 
+  const onResultNameChange = function (event) {
+    self.props.onResultNameChange(event.target.value);
+  };
+
   const renderPreview = function() {
-    const {resultImage, onAddImage} = self.props;
+    const {resultImage, onAddImage, resultName} = self.props;
     return (
       <div className="previewImageContainer">
         <div className="input-group">
-          <input type="text" className="form-control" value="TODO default image name" />
+          <input type="text" className="form-control" value={resultName} onChange={onResultNameChange} />
           <span className="input-group-addon">
             <i className="fa fa-pencil" aria-hidden="true"></i>
           </span>
@@ -231,9 +233,13 @@ export const View = actions => EpicComponent(self => {
     self.props.dispatch({type: actions.imageDeleted, index: imageIndex});
   };
 
+  const onResultNameChange = function (resultName) {
+    self.props.dispatch({ type: actions.resultNameChanged, resultName });
+  };
+
   self.render = function () {
     const {task, workspace} = self.props;
-    const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage} = workspace;
+    const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage, resultName} = workspace;
     const {originalImagesURLs} = task;
     return (
       <div className="taskContent">
@@ -244,7 +250,7 @@ export const View = actions => EpicComponent(self => {
           <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
           <ActionPanel
             operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
-            onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} />
+            onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} resultName={resultName} onResultNameChange={onResultNameChange} />
           {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
           <div style={{display: "none"}}>
             {originalImagesURLs.map(function(imageURL, imageIndex) {

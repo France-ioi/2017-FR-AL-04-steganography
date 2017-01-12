@@ -18,6 +18,7 @@ export default function* (deps) {
   yield defineAction('imageSelected', 'Workspace.Image.Selected');
   yield defineAction('operationChanged', 'Workspace.Operation.Changed');
   yield defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
+  yield defineAction('resultNameChanged', 'Workspace.ResultName.Changed');
 
   /* Simple workspace interface: init, dump, load, update, View */
 
@@ -26,27 +27,28 @@ export default function* (deps) {
       images: [],
       currentImageIndex: 0,
       currentOperationIndex: 0,
-      stagedImages: [null, null]
+      stagedImages: [null, null],
+      nextNameID: null
     });
   };
 
   const dump = function (workspace) {
     // Dump computed images.
-    const {images} = workspace;
+    const {images, nextNameID, resultName} = workspace;
     const imageDumps = [];
     for (let image of workspace.images) {
       if ('operation' in image) {
         imageDumps.push(dumpImage(image));
       }
     }
-    return {images: imageDumps};
+    return {images: imageDumps, nextNameID, resultName};
   };
 
   const load = function (dump) {
     // Use a saved dump to rebuild a workspace.  Any computation that depends
     // on the task is done in update.
-    const {images} = dump;
-    return {images: images.map(loadImage)};
+    const {images, nextNameID, resultName} = dump;
+    return {images: images.map(loadImage), nextNameID, resultName};
   };
 
   const updateWorkspace = function (task, workspace) {
@@ -60,9 +62,18 @@ export default function* (deps) {
     }
     // Prepend the task's images.
     images.splice(0, 0, ...task.originalImagesURLs.map(function (src, index) {
-      return {index, src};
+      const name = "Image " + (index + 1);
+      return {index, src, name};
     }));
-    return {...workspace, images};
+
+    let {nextNameID, resultName} = workspace;
+    if (!nextNameID) {
+      nextNameID = task.originalImagesURLs.length + 1;
+    }
+    if (!resultName) {
+      resultName = "Image " + nextNameID;
+    }
+    return {...workspace, images, nextNameID, resultName};
   };
 
   yield include(WorkspaceBuilder({init, dump, load, update: updateWorkspace, View: View(deps)}));
@@ -93,12 +104,21 @@ export default function* (deps) {
   });
 
   yield addReducer('imageAdded', function (state, action) {
-    const {image} = action;
+    let {image} = action;
+
+    // TODO is copying necessary, and is this the right place to do it?
+    // Without copying, multiple images will be affected by this name change,
+    // when 'add' is clicked several times in a row.
+    image = {...image, name: state.workspace.resultName};
+
     const newIndex = state.workspace.images.length;
+    const nextNameID = state.workspace.nextNameID + 1;
     return update(state, {
       workspace: {
         images: {$push: [image]},
-        currentImageIndex: {$set: newIndex}
+        currentImageIndex: {$set: newIndex},
+        nextNameID: {$set: nextNameID},
+        resultName: {$set: "Image " + nextNameID}
       }
     });
   });
@@ -146,6 +166,15 @@ export default function* (deps) {
     });
   });
 
+  yield addReducer('resultNameChanged', function (state, action) {
+    const {resultName} = action;
+    return update(state, {
+      workspace: {
+        resultName: {$set: resultName}
+      }
+    });
+  });
+
   function deepClearCanvas (image) {
     if (image.canvas) {
       return {...image, canvas: undefined, src: undefined};
@@ -171,26 +200,27 @@ export default function* (deps) {
 
   /*
     An image dump is of one of these forms:
-      {index}
-      {operation: 'name', operands: [...dumps]}
+      {name, index}
+      {name, operation: 'name', operands: [...dumps]}
   */
   function dumpImage (image) {
     if ('index' in image) {
-      return {index: image.index};
+      return {name: image.name, index: image.index};
     } else {
-      const {operation, operands} = image;
-      return {operation: operation.name, operands: operands.map(dumpImage)};
+      const {name, operation, operands} = image;
+      return {name, operation: operation.name, operands: operands.map(dumpImage)};
     }
   }
 
   function loadImage (dump) {
     if ('index' in dump) {
-      const {index} = dump;
-      return {index}; // src is set in updateWorkspace()
+      const {name, index} = dump;
+      return {name, index}; // src is set in updateWorkspace()
     } else {
       const operation = findOperationByName(dump.operation);
       const operands = dump.operands.map(loadImage);
-      return {operation, operands}; // computation occurs in imageLoaded reducer
+      const name = dump.name;
+      return {name, operation, operands}; // computation occurs in imageLoaded reducer
     }
   }
 
