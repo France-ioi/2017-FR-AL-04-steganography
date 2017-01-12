@@ -189,11 +189,9 @@ export const ActionPanel = EpicComponent(self => {
     const {resultImage, onAddImage, resultName} = self.props;
     return (
       <div className="previewImageContainer">
-        <div className="input-group">
+        <div className="inputGroup">
           <input type="text" className="form-control" value={resultName} onChange={onResultNameChange} />
-          <span className="input-group-addon">
             <i className="fa fa-pencil" aria-hidden="true"></i>
-          </span>
         </div>
         <CanvasImageContainer size="small" selected={false} image={resultImage}/>
         <Button onClick={onAddImage}>Add</Button>

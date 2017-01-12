@@ -65,16 +65,18 @@
 .stageImageContainer + .stageImageContainer {
 	margin-left: 10px;
 }
-.actionPanelContainer .form-control,
-.actionPanelContainer .input-group-addon {
-	line-height: 1;
-	height: auto;
+.actionPanelContainer .inputGroup {
+	position: relative;
 }
 .actionPanelContainer .form-control {
-	padding: 3px;
+	line-height: 1;
+	height: auto;
+	padding: 3px 22px 3px 3px;
 }
-.actionPanelContainer .input-group-addon {
-	padding: 3px 6px;
+.actionPanelContainer .inputGroup i {
+	position: absolute;
+	top: 5px;
+	right: 5px;
 }
 .actionPanelContainer img,
 .actionPanelContainer .noImage {
