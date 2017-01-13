@@ -53,7 +53,7 @@ export const Thumbnail = EpicComponent(self => {
   self.render = function() {
     const {index, image, selected} = self.props;
     const className = selected ? "selected" : "unselected";
-    const thumbnailClassName = "thumbnail " + className;
+    const thumbnailClassName = `thumbnail ${className}`;
     return (
       <div onClick={onClick} className={thumbnailClassName}>
         <span className="thumbnail-image-name">{image.name}</span>

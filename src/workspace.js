@@ -62,7 +62,7 @@ export default function* (deps) {
     }
     // Prepend the task's images.
     images.splice(0, 0, ...task.originalImagesURLs.map(function (src, index) {
-      const name = "Image " + (index + 1);
+      const name = `Image ${index + 1}`;
       return {index, src, name};
     }));
 
@@ -71,7 +71,7 @@ export default function* (deps) {
       nextNameID = task.originalImagesURLs.length + 1;
     }
     if (!resultName) {
-      resultName = "Image " + nextNameID;
+      resultName = `Image ${nextNameID}`;
     }
     return {...workspace, images, nextNameID, resultName};
   };
@@ -105,10 +105,6 @@ export default function* (deps) {
 
   yield addReducer('imageAdded', function (state, action) {
     let {image} = action;
-
-    // TODO is copying necessary, and is this the right place to do it?
-    // Without copying, multiple images will be affected by this name change,
-    // when 'add' is clicked several times in a row.
     image = {...image, name: state.workspace.resultName};
 
     const newIndex = state.workspace.images.length;
@@ -118,7 +114,7 @@ export default function* (deps) {
         images: {$push: [image]},
         currentImageIndex: {$set: newIndex},
         nextNameID: {$set: nextNameID},
-        resultName: {$set: "Image " + nextNameID}
+        resultName: {$set: `Image ${nextNameID}`}
       }
     });
   });
