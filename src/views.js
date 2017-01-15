@@ -139,6 +139,7 @@ export const StageButton = EpicComponent(self => {
 
 // Operation param input field. props:
 // value - the value of this input field.
+// spec - the specification for this input field.
 // index - the index of this input field.
 // onChange - function to call with the index and value.
 export const OperationParam = EpicComponent(self => {
@@ -146,8 +147,11 @@ export const OperationParam = EpicComponent(self => {
     self.props.onChange(self.props.index, value);
   };
   self.render = function() {
-    const {value} = self.props;
-    return <NumericInput min={0} max={10} value={value} step={0.1} precision={1} onChange={onChange}/>;
+    const {spec, value} = self.props;
+    if (spec.type === "numeric") {
+      return <NumericInput value={value} min={spec.min||0} max={spec.max||10} step={spec.step||0.1} precision={spec.precision||1} onChange={onChange}/>;
+    }
+    return <p>{"invalid type "}{spec.type}</p>;
   };
 });
 
@@ -196,7 +200,7 @@ export const ActionPanel = EpicComponent(self => {
     return (
       <div className="operationParams">
         {paramTypes.map(function(paramType, paramTypeIndex) {
-          return <OperationParam key={paramTypeIndex} value={operationParams[paramTypeIndex]} index={paramTypeIndex} onChange={onOperationParamChange}/>;
+          return <OperationParam key={paramTypeIndex} spec={paramType} value={operationParams[paramTypeIndex]} index={paramTypeIndex} onChange={onOperationParamChange}/>;
         })}
       </div>
     );

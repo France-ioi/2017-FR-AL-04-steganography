@@ -47,7 +47,11 @@ export const OPERATIONS = [
     numOperands: 1,
     params: [{
       type: "numeric",
-      default: 1
+      default: 64,
+      min: 0,
+      max: 128,
+      step: 1,
+      precision: 0
     }]
   }
 ];
