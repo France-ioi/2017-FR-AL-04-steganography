@@ -1,6 +1,7 @@
 var Jimp = require("jimp");
 var seedrandom = require('seedrandom');
 
+module.exports = generate;
 
 var attemptedCombinations = [
    [2, 5, 3, 2],
@@ -114,81 +115,95 @@ function genMessageImages(rng, messages, messageImages, keyImage, font) {
 }
 
 function genImages1(rng, done) {
-   Jimp.read("images/blank.png").then(function (messageImage1) {
-   Jimp.read("images/key.png").then(function (keyImage) {
-   console.error("loading font");
-   Jimp.loadFont("fonts/font.fnt").then(function (font) {
+   Jimp.read("images/blank.png").catch(done).then(function (messageImage1) {
+   Jimp.read("images/key.png").catch(done).then(function (keyImage) {
+      console.error("loading font");
+      Jimp.loadFont("fonts/font.fnt").catch(done).then(function (font) {
       try {
-          console.error("font loaded");
-          var messageImages = [messageImage1];
-          var messages = genMessages(rng, 1);
-          genMessageImages(rng, messages, messageImages, keyImage, font);
+         console.error("font loaded");
+         var messageImages = [messageImage1];
+         var messages = genMessages(rng, 1);
+         genMessageImages(rng, messages, messageImages, keyImage, font);
 
-          done({
-             secret: messages[0],
-             imagesURLs: ["images/key.png", "messageImage1.png"]
-          });
+         done(null, {
+            secret: messages[0],
+            imagesURLs: ["images/key.png", "messageImage1.png"]
+         });
       } catch(err) {
-       console.error(err);
-       var stack = new Error().stack;
-       console.log( stack )
-   };
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);})
+         done(err);
+      }
+   });
+   });
+   });
 }
 
 function genImages2(rng, done) {
-   Jimp.read("images/blank.png").then(function (messageImage1) {
-   Jimp.read("images/blank.png").then(function (messageImage2) {
-   Jimp.read("images/blank.png").then(function (messageImage3) {
-   Jimp.read("images/blank.png").then(function (messageImage4) {
-   Jimp.read("images/key.png").then(function (keyImage) {
+   Jimp.read("images/blank.png").catch(done).then(function (messageImage1) {
+   Jimp.read("images/blank.png").catch(done).then(function (messageImage2) {
+   Jimp.read("images/blank.png").catch(done).then(function (messageImage3) {
+   Jimp.read("images/blank.png").catch(done).then(function (messageImage4) {
+   Jimp.read("images/key.png").catch(done).then(function (keyImage) {
    console.error("loading font");
-   Jimp.loadFont("fonts/font.fnt").then(function (font) {
+   Jimp.loadFont("fonts/font.fnt").catch(done).then(function (font) {
       try {
-          console.error("font loaded");
-          var messageImages = [messageImage1, messageImage2, messageImage3, messageImage4];
-          var messages = genMessages(rng, 4);
-          genMessageImages(rng, messages, messageImages, keyImage, font);
+         console.error("font loaded");
+         var messageImages = [messageImage1, messageImage2, messageImage3, messageImage4];
+         var messages = genMessages(rng, 4);
+         genMessageImages(rng, messages, messageImages, keyImage, font);
 
-          done({
-             secret: messages[0],
-             imagesURLs: ["messageImage1.png", "messageImage2.png", "messageImage3.png", "messageImage4.png"]
-          });
-      } catch(err) {
-       console.error(err);
-       var stack = new Error().stack;
-       console.log( stack )
-   };
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);});
-   }).catch(function (err) {    console.error(err);})
+         done(null, {
+            secret: messages[0],
+            imagesURLs: [
+               "messageImage1.png",
+               "messageImage2.png",
+               "messageImage3.png",
+               "messageImage4.png"
+            ]
+         });
+      } catch (err) {
+         done(err);
+      }
+   });
+   });
+   });
+   });
+   });
+   });
 }
 
-function generate(params, seed, done) {
-  var rng = seedrandom(seed);
-  const task = {
-    originalImagesURLs: [
-    ],
-    hints: {}
-  };
-  function genImagesDone(full_task) {
-     var task = {
-        imagesURLs: full_task.imagesURLs
-     };
-     done(task, full_task);        
-  }
-  if (params.version == 1) {
-     genImages1(rng, genImagesDone);
-  } else {
-     genImages2(rng, genImagesDone);
-  }
+function getUserTask (full_task) {
+   var task = {
+      imagesURLs: full_task.imagesURLs
+   };
+   return task;
+}
+
+function generate (params, seed, callback) {
+   var rng = seedrandom(seed);
+
+   const task = {
+      originalImagesURLs: [],
+      hints: {}
+   };
+
+   if (params.version == 1) {
+      genImages1(rng, genImagesDone);
+   } else {
+      genImages2(rng, genImagesDone);
+   }
+
+   function genImagesDone(err, full_task) {
+      callback(null, {
+         full_task,
+         task: getUserTask(full_task)
+      });
+   }
 };
 
-module.exports = generate;
-
-//generate({ version: 2}, 42, function() {});
+// Run this module directly with node to test it.
+if (require.main === module) {
+   generate({version: 2}, 42, function (err, result) {
+      if (err) throw err;
+      console.log(result);
+   });
+}
