@@ -42,6 +42,7 @@
     "flatten": "^1.0.2",
     "font-awesome": "^4.7.0",
     "immutability-helper": "^2.1.1",
+    "jimp": "^0.2.27",
     "node-range": "^0.1.0",
     "normalize.css": "^5.0.0",
     "rc-tooltip": "^3.4.2",
@@ -53,6 +54,7 @@
     "react-numeric-input": "^2.0.7",
     "react-redux": "^5.0.2",
     "redux": "^3.6.0",
-    "redux-saga": "^0.14.2"
+    "redux-saga": "^0.14.2",
+    "seedrandom": "^2.4.2"
   }
 }
