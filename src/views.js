@@ -24,7 +24,7 @@ export const CanvasImage = EpicComponent(self => {
       height = IMAGE_HEIGHT;
     }
     if (!image || !image.src) {
-      return <div className="noImage" style={{width: width+'px', height: height+'px'}}>no image</div>;
+      return <div className="noImage" style={{width: width+'px', height: height+'px'}}>pas d'image</div>;
     }
     return <img src={image.src} width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{width: width+'px', height: height+'px'}}/>;
   };
@@ -102,7 +102,7 @@ export const BigImageContainer = EpicComponent(self => {
   };
   const renderDelete = function() {
     const {deleteImage} = self.props;
-    return <Button onClick={deleteImage}>Delete <i className="fa fa-times" aria-hidden="true"></i></Button>;
+    return <Button onClick={deleteImage}>Supprimer <i className="fa fa-times" aria-hidden="true"></i></Button>;
   };
 }, {displayName: 'BigImageContainer'});
 
@@ -133,7 +133,7 @@ export const StageButton = EpicComponent(self => {
     self.props.onClick(self.props.index);
   };
   self.render = function() {
-    return <Button onClick={onClick}>Set</Button>;
+    return <Button onClick={onClick}>Modifier</Button>;
   };
 }, {displayName: 'StageButton'});
 
@@ -243,7 +243,7 @@ export const ActionPanel = EpicComponent(self => {
             <i className="fa fa-pencil" aria-hidden="true"></i>
         </div>
         <CanvasImageContainer size="small" selected={false} image={resultImage}/>
-        <Button onClick={onAddImage}>Add</Button>
+        <Button onClick={onAddImage}>Enregistrer</Button>
       </div>
     );
   };
