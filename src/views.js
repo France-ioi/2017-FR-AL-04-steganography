@@ -170,13 +170,18 @@ export const ActionPanel = EpicComponent(self => {
   self.render = function() {
     const {operationIndex, onSetOperation} = self.props;
     const showPreview = operationIndex !== 0;
+    let description = OPERATIONS[operationIndex].description;
+    // If the description is not a string, assume it is a react component.
+    if (typeof description !== 'string') {
+      description = React.createElement(description, OPERATIONS[operationIndex].type);
+    }
     return (
       <div className="actionPanelContainer">
         <div className="actionLabel">
           <label>Appliquer un opérateur :&nbsp;</label>
           <OperationList onChange={onSetOperation} selectedIndex={operationIndex}/>
         </div>
-        <div className="actionDescription">{OPERATIONS[operationIndex].description}</div>
+        <div className="actionDescription">{description}</div>
         {renderParams()}
         {renderStage()}
         {showPreview && renderPreview()}

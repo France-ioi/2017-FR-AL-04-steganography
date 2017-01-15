@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 export const THUMBNAILS_COUNT = 4;
 export const IMAGE_WIDTH = 400;
 export const IMAGE_HEIGHT = 400;
