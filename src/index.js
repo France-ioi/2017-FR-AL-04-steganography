@@ -2,24 +2,17 @@
 import {defineSelector, defineView, include, addEnhancer} from 'epic-linker';
 import {hostTask} from 'alkindi-task-lib';
 
-import process from 'process';
-import SourceMapSupport from 'source-map-support';
-
 import Task from './task';
 import AnswerDialog from './answer_dialog';
 import Workspace from './workspace';
 
-import 'font-awesome/css/font-awesome.css!';
-import 'bootstrap/dist/css/bootstrap.css!';
-import 'rc-tooltip/assets/bootstrap.css!';
-import '2017-fr-al-04-steganography.css/style.css!';
+import 'font-awesome/css/font-awesome.css';
+import 'bootstrap/dist/css/bootstrap.css';
+import 'rc-tooltip/assets/bootstrap.css';
+import './style.css';
 
-export function run (options) {
-   const isDev = process.env.NODE_ENV === 'development';
-   if (isDev) {
-      // SourceMapSupport.install();
-   }
-   hostTask(options, function* (deps) {
+export function run (container, options) {
+   hostTask(container, options, function* (deps) {
 
       /* The Task view displays the task to the contestant.
          The standard 'TaskSelector' selector supplies the task object as a
@@ -42,6 +35,7 @@ export function run (options) {
          the task. */
       yield include(Workspace);
 
+      const isDev = process.env.NODE_ENV === 'development';
       const reduxExt = window.__REDUX_DEVTOOLS_EXTENSION__;
       if (isDev && reduxExt) {
          yield addEnhancer(reduxExt());
