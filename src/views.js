@@ -208,6 +208,7 @@ export const ActionPanel = EpicComponent(self => {
     }
     return (
       <div className="operationParams">
+        <label>Facteur multiplicatif :&nbsp;</label>
         {paramTypes.map(function(paramType, paramTypeIndex) {
           return <OperationParam key={paramTypeIndex} spec={paramType} value={operationParams[paramTypeIndex]} index={paramTypeIndex} onChange={onOperationParamChange}/>;
         })}
