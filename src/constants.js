@@ -8,42 +8,50 @@ export const THUMB_HEIGHT = 100;
 export const OPERATIONS = [
   {
     name: "noOp",
-    description: "Select operation",
+    longName: "Select operation",
+    description: "",
     numOperands: 0
   },
   {
     name: "negate",
-    description: "Negate image",
+    longName: "Negate image",
+    description: "Negate the selected image.",
     numOperands: 1
   },
   {
     name: "extractRed",
-    description: "Extract Red",
+    longName: "Extract Red",
+    description: "Extract red from the image.",
     numOperands: 1
   },
   {
     name: "extractGreen",
-    description: "Extract Green",
+    longName: "Extract Green",
+    description: "Extract green from the image.",
     numOperands: 1
   },
   {
     name: "extractBlue",
-    description: "Extract Blue",
+    longName: "Extract Blue",
+    description: "Extract blue from the image.",
     numOperands: 1
   },
   {
     name: "mean",
-    description: "Average two images",
+    longName: "Average two images",
+    description: "Take average of two images.",
     numOperands: 2
   },
   {
     name: "subtract",
-    description: "Subtract an image from another",
+    longName: "Subtract an image from another",
+    description: "Subtract one image from another image.",
     numOperands: 2
   },
   {
     name: "brightness",
-    description: "Change image brightness",
+    longName: "Change image brightness",
+    description: "Change the brightness of the image.",
     numOperands: 1,
     params: [{
       type: "numeric",

@@ -118,7 +118,7 @@ export const OperationList = EpicComponent(self => {
     return (
       <select onChange={onChange} value={selectedIndex}>
         {OPERATIONS.map(function(operation, index) {
-          return <option key={index} value={index}>{operation.description}</option>;
+          return <option key={index} value={index}>{operation.longName}</option>;
         })}
       </select>
     );
@@ -172,7 +172,7 @@ export const ActionPanel = EpicComponent(self => {
           <label>Appliquer un opérateur :&nbsp;</label>
           <OperationList onChange={onSetOperation} selectedIndex={operationIndex}/>
         </div>
-        <div className="actionDescription">Description of the operator: Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        <div className="actionDescription">{OPERATIONS[operationIndex].description}</div>
         {renderParams()}
         {renderStage()}
         {showPreview && renderPreview()}
