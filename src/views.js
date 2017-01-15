@@ -147,7 +147,7 @@ export const OperationParam = EpicComponent(self => {
   };
   self.render = function() {
     const {value} = self.props;
-    return <NumericInput min={0} max={10} value={value} step={0.1} precision={1} onChange={onChange}/>;
+    return <NumericInput min={0} max={128} value={value} step={1} onChange={onChange}/>;
   };
 });
 
