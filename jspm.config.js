@@ -63,6 +63,7 @@ SystemJS.config({
     "react-dnd": "npm:react-dnd@2.1.4",
     "react-dnd-html5-backend": "npm:react-dnd-html5-backend@2.1.2",
     "react-dom": "npm:react-dom@15.4.2",
+    "react-numeric-input": "npm:react-numeric-input@2.0.7",
     "react-redux": "npm:react-redux@5.0.2",
     "redux": "npm:redux@3.6.0",
     "redux-saga": "npm:redux-saga@0.14.2",
