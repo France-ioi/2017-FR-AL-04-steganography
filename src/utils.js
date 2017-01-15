@@ -14,6 +14,17 @@ function unaryExtractChannel(exChannel) {
   }
 }
 
+function unaryBrightness(v1, channel, params) {
+  v1 *= params[0];
+  if(v1 < 0) {
+    v1 = 0;
+  }
+  else if(v1 > 255) {
+    v1 = 255;
+  }
+  return v1;
+}
+
 function binarySubtract(v1, v2, channel) {
   let v = v1 - v2;
   if (v < 0) {
@@ -30,24 +41,25 @@ const operatorToFunc = {
   mean: binaryMean,
   subtract: binarySubtract,
   negate: unaryNegate,
+  brightness: unaryBrightness,
   extractRed: unaryExtractChannel(0),
   extractGreen: unaryExtractChannel(1),
   extractBlue: unaryExtractChannel(2)
 };
 
-function applyUnary(sourceData, destData, operation) {
+function applyUnary(sourceData, operationParams, destData, operation) {
   let func = operatorToFunc[operation];
   for (var iPix = 0; iPix < sourceData.data.length; iPix++) {
     var v = 255;
     if (iPix % 4 != 3) {
       var v1 = sourceData.data[iPix];
-      var v = func(v1, iPix % 4);
+      var v = func(v1, iPix % 4, operationParams);
     }
     destData.data[iPix] = v;
   }
 };
 
-function applyBinary(sourceData1, sourceData2, destData, operation) {
+function applyBinary(sourceData1, sourceData2, operationParams, destData, operation) {
   let func = operatorToFunc[operation];
   for (var iPix = 0; iPix < sourceData1.data.length; iPix++) {
     var v = 255;
@@ -61,12 +73,12 @@ function applyBinary(sourceData1, sourceData2, destData, operation) {
 };
 
 export function applyOperation(name, args, destData) {
-  const numParams = args.length;
-  if (numParams === 1) {
-    return applyUnary(args[0], destData, name);
+  const numOperands = args.operands.length;
+  if (numOperands === 1) {
+    return applyUnary(args.operands[0], args.operationParams, destData, name);
   }
-  if (numParams === 2) {
-    return applyBinary(args[0], args[1], destData, name);
+  if (numOperands === 2) {
+    return applyBinary(args.operands[0], args.operands[1], args.operationParams, destData, name);
   }
 };
 

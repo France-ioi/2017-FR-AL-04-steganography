@@ -2,6 +2,7 @@
 import React from 'react';
 import {Button} from 'react-bootstrap';
 import EpicComponent from 'epic-component';
+import NumericInput from 'react-numeric-input';
 
 import {
   THUMBNAILS_COUNT, IMAGE_WIDTH, IMAGE_HEIGHT,
@@ -136,6 +137,20 @@ export const StageButton = EpicComponent(self => {
   };
 }, {displayName: 'StageButton'});
 
+// Operation param input field. props:
+// value - the value of this input field.
+// index - the index of this input field.
+// onChange - function to call with the index and value.
+export const OperationParam = EpicComponent(self => {
+  const onChange = function(value) {
+    self.props.onChange(self.props.index, value);
+  };
+  self.render = function() {
+    const {value} = self.props;
+    return <NumericInput min={0} max={10} value={value} step={0.1} precision={1} onChange={onChange}/>;
+  };
+});
+
 // Panel for operations below the big image. props:
 // operationIndex - index of selected operation.
 // stagedImages - images selected for operation.
@@ -144,6 +159,8 @@ export const StageButton = EpicComponent(self => {
 // onSetOperation - function to change the selected operation.
 // onAddImage - function to add the result image to the list of images.
 // resultName - name for the new image to be added.
+// operationParams - Workspace params object for this operation.
+// onOperationParamChange - function to call when params change.
 export const ActionPanel = EpicComponent(self => {
 
   self.render = function() {
@@ -156,8 +173,31 @@ export const ActionPanel = EpicComponent(self => {
           <OperationList onChange={onSetOperation} selectedIndex={operationIndex}/>
         </div>
         <div className="actionDescription">Description of the operator: Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+        {renderParams()}
         {renderStage()}
         {showPreview && renderPreview()}
+      </div>
+    );
+  };
+
+  const onOperationParamChange = function(paramIndex, paramValue) {
+    let {operationParams} = self.props;
+    operationParams = {...operationParams};
+    operationParams[paramIndex] = paramValue;
+    self.props.onOperationParamChange(operationParams);
+  };
+
+  const renderParams = function() {
+    const {operationParams, operationIndex} = self.props;
+    const paramTypes = OPERATIONS[operationIndex].params;
+    if(!paramTypes) {
+      return null;
+    }
+    return (
+      <div className="operationParams">
+        {paramTypes.map(function(paramType, paramTypeIndex) {
+          return <OperationParam key={paramTypeIndex} value={operationParams[paramTypeIndex]} index={paramTypeIndex} onChange={onOperationParamChange}/>;
+        })}
       </div>
     );
   };
@@ -165,7 +205,7 @@ export const ActionPanel = EpicComponent(self => {
   const renderStage = function() {
     const {operationIndex, onSetStagedImage} = self.props;
     const operation = OPERATIONS[operationIndex];
-    const stagedImages = self.props.stagedImages.slice(0, operation.numParams);
+    const stagedImages = self.props.stagedImages.slice(0, operation.numOperands);
     return (
       <div className="stageImagesContainer">
           {stagedImages.map(function(image, index) {
@@ -235,9 +275,13 @@ export const View = actions => EpicComponent(self => {
     self.props.dispatch({ type: actions.resultNameChanged, resultName });
   };
 
+  const onOperationParamChange = function(operationParams) {
+    self.props.dispatch({type: actions.operationParamsChanged, operationParams})
+  }
+
   self.render = function () {
     const {task, workspace} = self.props;
-    const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage, resultName} = workspace;
+    const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage, resultName, operationParams} = workspace;
     const {originalImagesURLs} = task;
     return (
       <div className="taskContent">
@@ -248,7 +292,8 @@ export const View = actions => EpicComponent(self => {
           <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
           <ActionPanel
             operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
-            onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} resultName={resultName} onResultNameChange={onResultNameChange} />
+            onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} resultName={resultName} onResultNameChange={onResultNameChange}
+            operationParams={operationParams} onOperationParamChange={onOperationParamChange}/>
           {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
           <div style={{display: "none"}}>
             {originalImagesURLs.map(function(imageURL, imageIndex) {

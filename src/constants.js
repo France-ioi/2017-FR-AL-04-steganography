@@ -9,37 +9,46 @@ export const OPERATIONS = [
   {
     name: "noOp",
     description: "Select operation",
-    numParams: 0
+    numOperands: 0
   },
   {
     name: "negate",
     description: "Negate image",
-    numParams: 1
+    numOperands: 1
   },
   {
     name: "extractRed",
     description: "Extract Red",
-    numParams: 1
+    numOperands: 1
   },
   {
     name: "extractGreen",
     description: "Extract Green",
-    numParams: 1
+    numOperands: 1
   },
   {
     name: "extractBlue",
     description: "Extract Blue",
-    numParams: 1
+    numOperands: 1
   },
   {
     name: "mean",
     description: "Average two images",
-    numParams: 2
+    numOperands: 2
   },
   {
     name: "subtract",
     description: "Subtract an image from another",
-    numParams: 2
+    numOperands: 2
+  },
+  {
+    name: "brightness",
+    description: "Change image brightness",
+    numOperands: 1,
+    params: [{
+      type: "numeric",
+      default: 1
+    }]
   }
 ];
 

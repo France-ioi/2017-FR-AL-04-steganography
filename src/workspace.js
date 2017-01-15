@@ -19,6 +19,7 @@ export default function* (deps) {
   yield defineAction('operationChanged', 'Workspace.Operation.Changed');
   yield defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
   yield defineAction('resultNameChanged', 'Workspace.ResultName.Changed');
+  yield defineAction('operationParamsChanged', 'Workspace.Operation.ParamsChanged');
 
   /* Simple workspace interface: init, dump, load, update, View */
 
@@ -28,27 +29,28 @@ export default function* (deps) {
       currentImageIndex: 0,
       currentOperationIndex: 0,
       stagedImages: [null, null],
-      nextNameID: null
+      nextNameID: null,
+      operationParams: {}
     });
   };
 
   const dump = function (workspace) {
     // Dump computed images.
-    const {images, nextNameID, resultName} = workspace;
+    const {images, nextNameID, resultName, operationParams} = workspace;
     const imageDumps = [];
     for (let image of workspace.images) {
       if ('operation' in image) {
         imageDumps.push(dumpImage(image));
       }
     }
-    return {images: imageDumps, nextNameID, resultName};
+    return {images: imageDumps, nextNameID, resultName, operationParams};
   };
 
   const load = function (dump) {
     // Use a saved dump to rebuild a workspace.  Any computation that depends
     // on the task is done in update.
-    const {images, nextNameID, resultName} = dump;
-    return {images: images.map(loadImage), nextNameID, resultName};
+    const {images, nextNameID, resultName, operationParams} = dump;
+    return {images: images.map(loadImage), nextNameID, resultName, operationParams};
   };
 
   const updateWorkspace = function (task, workspace) {
@@ -138,7 +140,14 @@ export default function* (deps) {
     const {index} = action;
     const operation = OPERATIONS[index];
     const operands = state.workspace.stagedImages;
-    const resultImage = computeImage({operation, operands});
+    const {operationParams} = state.workspace;
+    for(let paramTypeIndex in operation.params) {
+      let paramType = operation.params[paramTypeIndex];
+      if(operationParams[paramTypeIndex] === null || operationParams[paramTypeIndex] === undefined) {
+        operationParams[paramTypeIndex] = paramType.default;
+      }
+    }
+    const resultImage = computeImage({operation, operands, operationParams});
     return update(state, {
       workspace: {
         currentOperationIndex: {$set: index},
@@ -153,7 +162,8 @@ export default function* (deps) {
     const stagedImages = workspace.stagedImages.slice();
     stagedImages[slotIndex] = workspace.images[imageIndex];
     const operation = OPERATIONS[workspace.currentOperationIndex];
-    const resultImage = computeImage({operation, operands: stagedImages});
+    const {operationParams} = state.workspace;
+    const resultImage = computeImage({operation, operands: stagedImages, operationParams});
     return update(state, {
       workspace: {
         stagedImages: {$set: stagedImages},
@@ -169,6 +179,15 @@ export default function* (deps) {
         resultName: {$set: resultName}
       }
     });
+  });
+
+  yield addReducer('operationParamsChanged', function (state, action) {
+    const {operationParams} = action;
+    let {workspace} = state;
+    let {resultImage} = workspace;
+    resultImage = computeImage({...resultImage, operationParams});
+    workspace = {...workspace, resultImage, operationParams};
+    return {...state, workspace};
   });
 
   function deepClearCanvas (image) {
@@ -222,21 +241,24 @@ export default function* (deps) {
 
   function computeImage (image) {
     // Trim operands to length.
-    let {operation, operands} = image;
-    const {name, numParams} = operation;
-    operands = operands.slice(0, numParams);
-    if (operands.length < numParams) {
+    let {operation, operands, operationParams} = image;
+    const {name, numOperands} = operation;
+    operands = operands.slice(0, numOperands);
+    if (operands.length < numOperands) {
       return image;
     }
     // Extract image data for each operand.
-    const args = [];
+    const args = {
+      operationParams,
+      operands: []
+    };
     for (let index = 0; index < operands.length; index++) {
       const operand = operands[index];
       if (!operand || !operand.canvas) {
         return image;
       }
       const sourceContext = operand.canvas.getContext('2d');
-      args.push(sourceContext.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT));
+      args.operands.push(sourceContext.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT));
     }
     // Create a new canvas to compute the result of the operation.
     const canvas = document.createElement('canvas');
