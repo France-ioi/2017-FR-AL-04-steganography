@@ -56,14 +56,50 @@
 .actionDescription {
 	margin-bottom: 10px;
 }
-.stageImagesContainer,
+.operationParams {
+	margin: 10px 0;
+	text-align: center;
+}
+.actionImagesContainer {
+	position: relative;
+	height: 193px;
+}
+.stageImagesContainer {
+    position: absolute;
+    top: 0;
+	left: 30px;
+	text-align: left;
+	min-width: 160px;
+}
 .previewImageContainer,
 .stageImageContainer {
     display: inline-block;
     text-align: center;
 }
+.previewImageContainer {
+	position: absolute;
+	top: 0;
+	right: 30px;
+}
+.stageImagesContainer::after {
+	content: "\f178";
+	font-family: FontAwesome;
+	position: absolute;
+	right: -60px;
+	top: 55px;
+	font-size: 32px;
+}
 .stageImageContainer + .stageImageContainer {
-	margin-left: 10px;
+	margin-left: 20px;
+}
+.stageImageContainer .image-name {
+	height: 24px;
+	line-height: 24px;
+}
+.stageImagesContainer img,
+.stageImagesContainer .noImage {
+	margin: 3px 0 10px;
+	display: block;
 }
 .actionPanelContainer .inputGroup {
 	position: relative;
@@ -78,22 +114,11 @@
 	top: 5px;
 	right: 5px;
 }
-.actionPanelContainer img,
-.actionPanelContainer .noImage {
-	margin: 3px auto 10px;
-	display: block;
-}
-.previewImageContainer {
-    margin-left: 80px;
-    position: relative;
-}
-.previewImageContainer::before {
-	content: "\f178";
-	position: absolute;
-	left: -34px;
-	top: 55px;
-	font-size: 32px;
-}
 .previewImageContainer .input-group {
 	width: 180px;
+}
+.previewImageContainer img,
+.previewImageContainer .noImage {
+	margin: 3px auto 10px;
+	display: block;
 }
