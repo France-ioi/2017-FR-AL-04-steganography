@@ -1,7 +1,13 @@
-var Jimp = require("jimp");
-var seedrandom = require('seedrandom');
+const Jimp = require("jimp");
+const path = require("path");
+const url = require('url');
+const seedrandom = require('seedrandom');
+const crypto = require('crypto');
+const mkdirp = require('mkdirp');
 
 module.exports = generate;
+
+const outRootDir = process.env.OUT_DIR || path.resolve(path.dirname(__dirname), 'generated');
 
 var attemptedCombinations = [
    [2, 5, 3, 2],
@@ -104,64 +110,65 @@ function genMessages(rng, nbMessages) {
     return messages;
 }
 
-function genMessageImages(rng, messages, messageImages, keyImage, font) {
+/* Returns a promise that resolves after all files has been written to outDir
+   with an array containing the filenames. */
+function genMessageImages(rng, outDir, messages, messageImages, keyImage, font) {
    var ratio = 0.95;
-
-   for (var iMessage = 0; iMessage < messages.length; iMessage++) {
-      messageImages[iMessage].print(font, 20, 200, messages[iMessage]);
-      mergeImages(rng, messageImages[iMessage], keyImage, messageImages[iMessage], ratio);
-      messageImages[iMessage].write("message" + (iMessage + 1) + ".png");
-   }
+   return Promise.all(messages.map((message, iMessage) => new Promise(function (resolve, reject) {
+      const messageImage = messageImages[iMessage];
+      messageImage.print(font, 20, 200, message);
+      mergeImages(rng, messageImage, keyImage, messageImage, ratio);
+      const filename = `message${iMessage + 1}.png`;
+      const filepath = path.resolve(outDir, filename);
+      messageImage.write(filepath, function (err) {
+         if (err) return reject(err);
+         resolve(filename);
+      });
+   })));
 }
 
-function genImages1(rng, done) {
-   Jimp.read("images/blank.png").catch(done).then(function (messageImage1) {
-   Jimp.read("images/key.png").catch(done).then(function (keyImage) {
-      console.error("loading font");
-      Jimp.loadFont("fonts/font.fnt").catch(done).then(function (font) {
+function genImages1(rng, outDir, outBase, cb) {
+   Jimp.read("images/blank.png").catch(cb).then(function (messageImage1) {
+   Jimp.read("images/key.png").catch(cb).then(function (keyImage) {
+      Jimp.loadFont("fonts/font.fnt").catch(cb).then(function (font) {
       try {
-         console.error("font loaded");
          var messageImages = [messageImage1];
          var messages = genMessages(rng, 1);
-         genMessageImages(rng, messages, messageImages, keyImage, font);
-
-         done(null, {
-            secret: messages[0],
-            imagesURLs: ["images/key.png", "messageImage1.png"]
+         genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (filenames) {
+            const imageURLs = filenames.map(fn => url.resolve(outBase, fn));
+            imageURLs.unshift("/images/key.png");
+            cb(null, {
+               secret: messages[0],
+               imagesURLs: imageURLs
+            });
          });
       } catch(err) {
-         done(err);
+         cb(err);
       }
    });
    });
    });
 }
 
-function genImages2(rng, done) {
-   Jimp.read("images/blank.png").catch(done).then(function (messageImage1) {
-   Jimp.read("images/blank.png").catch(done).then(function (messageImage2) {
-   Jimp.read("images/blank.png").catch(done).then(function (messageImage3) {
-   Jimp.read("images/blank.png").catch(done).then(function (messageImage4) {
-   Jimp.read("images/key.png").catch(done).then(function (keyImage) {
-   console.error("loading font");
-   Jimp.loadFont("fonts/font.fnt").catch(done).then(function (font) {
+function genImages2(rng, outDir, outBase, cb) {
+   Jimp.read("images/blank.png").catch(cb).then(function (messageImage1) {
+   Jimp.read("images/blank.png").catch(cb).then(function (messageImage2) {
+   Jimp.read("images/blank.png").catch(cb).then(function (messageImage3) {
+   Jimp.read("images/blank.png").catch(cb).then(function (messageImage4) {
+   Jimp.read("images/key.png").catch(cb).then(function (keyImage) {
+   Jimp.loadFont("fonts/font.fnt").catch(cb).then(function (font) {
       try {
-         console.error("font loaded");
          var messageImages = [messageImage1, messageImage2, messageImage3, messageImage4];
          var messages = genMessages(rng, 4);
-         genMessageImages(rng, messages, messageImages, keyImage, font);
-
-         done(null, {
-            secret: messages[0],
-            imagesURLs: [
-               "messageImage1.png",
-               "messageImage2.png",
-               "messageImage3.png",
-               "messageImage4.png"
-            ]
+         genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (filenames) {
+            const imageURLs = filenames.map(fn => url.resolve(outBase, fn));
+            cb(null, {
+               secret: messages[0],
+               imagesURLs: imageURLs
+            });
          });
       } catch (err) {
-         done(err);
+         cb(err);
       }
    });
    });
@@ -173,32 +180,46 @@ function genImages2(rng, done) {
 
 function getUserTask (full_task) {
    var task = {
-      imagesURLs: full_task.imagesURLs
+      originalImagesURLs: full_task.imagesURLs
    };
    return task;
 }
 
 function generate (params, seed, callback) {
-   var rng = seedrandom(seed);
 
-   const task = {
-      originalImagesURLs: [],
-      hints: {}
-   };
+   // Temporary, alkindi-task-lib should pass sensible values.
+   params = params || {};
+   seed = seed || "";
 
-   if (params.version == 1) {
-      genImages1(rng, genImagesDone);
-   } else {
-      genImages2(rng, genImagesDone);
-   }
+   const rng = seedrandom(seed);
+   const hash = crypto.createHash('sha1').update('seed', 'utf8').digest('hex');
+   const outDir = path.join(outRootDir, hash.substr(0, 2), hash.substring(2));
+   const outBase = ["generated", hash.substr(0, 2), hash.substring(2), ''].join('/');
+
+   mkdirp(outDir, function (err) {
+      if (err) return callback(err);
+      if (params.version == 1) {
+         genImages1(rng, outDir, outBase, genImagesDone);
+      } else {
+         genImages2(rng, outDir, outBase, genImagesDone);
+      }
+   });
 
    function genImagesDone(err, full_task) {
+      if (err) return callback(err);
       callback(null, {
          full_task,
          task: getUserTask(full_task)
       });
    }
 };
+
+// For development, crash on unhandled promise rejection to get a stack trace.
+if (process.env.NODE_ENV !== "production") {
+   process.on('unhandledRejection', function onError (err) {
+      throw err;
+   });
+}
 
 // Run this module directly with node to test it.
 if (require.main === module) {

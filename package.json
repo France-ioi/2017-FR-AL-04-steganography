@@ -30,7 +30,7 @@
     "webpack-dev-middleware": "^1.9.0"
   },
   "dependencies": {
-    "alkindi-task-lib": "^2.2.0",
+    "alkindi-task-lib": "^3.0.0",
     "babel-runtime": "^6.20.0",
     "bootstrap": "^3.3.7",
     "classnames": "^2.2.5",
@@ -43,6 +43,7 @@
     "font-awesome": "^4.7.0",
     "immutability-helper": "^2.1.1",
     "jimp": "^0.2.27",
+    "mkdirp": "^0.5.1",
     "node-range": "^0.1.0",
     "normalize.css": "^5.0.0",
     "rc-tooltip": "^3.4.2",
