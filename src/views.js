@@ -173,7 +173,7 @@ export const ActionPanel = EpicComponent(self => {
     let description = OPERATIONS[operationIndex].description;
     // If the description is not a string, assume it is a react component.
     if (typeof description !== 'string') {
-      description = React.createElement(description, OPERATIONS[operationIndex].type);
+      description = React.createElement(description, OPERATIONS[operationIndex]);
     }
     return (
       <div className="actionPanelContainer">
