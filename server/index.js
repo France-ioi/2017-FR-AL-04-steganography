@@ -14,3 +14,14 @@ alkindiTaskServer({
   }
 });
 
+function gradeAnswer (full_task, task, answer, callback) {
+  const {secret} = full_task;
+  var answerNoSpaces = answer.replace(/[^1-9]+/g, '');
+  const is_full_solution = answerNoSpaces === secret;
+  const is_solution = is_full_solution;
+  const feedback = is_full_solution;
+  const score = is_full_solution ? 100 : 0;
+  callback(null, {
+    feedback, score, is_solution, is_full_solution
+  });
+}
