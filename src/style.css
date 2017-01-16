@@ -1,6 +1,9 @@
 #task {
 	margin: 10px;
 }
+.taskInstructions {
+	text-align: justify;
+}
 .taskContent {
 }
 .taskContent img,

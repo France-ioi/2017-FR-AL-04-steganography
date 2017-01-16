@@ -9,6 +9,8 @@ import {
   THUMB_WIDTH, THUMB_HEIGHT, OPERATIONS
 } from './constants';
 
+import {Task1, Task2} from './task';
+
 // A canvas tag. props:
 // image (binary tree representation of image operations).
 export const CanvasImage = EpicComponent(self => {
@@ -297,6 +299,7 @@ export const View = actions => EpicComponent(self => {
     const {task, workspace} = self.props;
     const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage, resultName, operationParams} = workspace;
     const {originalImagesURLs} = task;
+    return <Task2 task={task} />;
     return (
       <div className="taskContent">
         <div className="thumbnails-container-wrapper">
