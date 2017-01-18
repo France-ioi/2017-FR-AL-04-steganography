@@ -1,7 +1,7 @@
 import React from 'react';
 import EpicComponent from 'epic-component';
 
-export const Task1 = EpicComponent(self => {
+export const IntroVersion1 = EpicComponent(self => {
 
   self.render = function () {
     return (
@@ -51,7 +51,7 @@ export const Task1 = EpicComponent(self => {
 
 });
 
-export const Task2 = EpicComponent(self => {
+export const IntroVersion2 = EpicComponent(self => {
   self.render = function () {
     return (
       <div className="taskInstructions">
@@ -75,6 +75,11 @@ export const Task2 = EpicComponent(self => {
 
 export default EpicComponent(self => {
   self.render = function () {
-    return false;
+    const {version} = self.props;
+    switch (version) {
+      case 1: return <IntroVersion1/>;
+      case 2: return <IntroVersion2/>;
+      default: return false;
+    }
   };
 });

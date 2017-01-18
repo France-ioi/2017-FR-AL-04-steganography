@@ -180,6 +180,7 @@ function genImages2(rng, outDir, outBase, cb) {
 
 function getUserTask (full_task) {
    var task = {
+      version: full_task.version,
       originalImagesURLs: full_task.imagesURLs
    };
    return task;
@@ -198,15 +199,16 @@ function generate (params, seed, callback) {
 
    mkdirp(outDir, function (err) {
       if (err) return callback(err);
-      if (params.version == 1) {
-         genImages1(rng, outDir, outBase, genImagesDone);
-      } else {
-         genImages2(rng, outDir, outBase, genImagesDone);
+      switch (params.version) {
+         case 1: genImages1(rng, outDir, outBase, genImagesDone); break;
+         case 2: genImages2(rng, outDir, outBase, genImagesDone); break;
+         default: callback('bad version'); break;
       }
    });
 
    function genImagesDone(err, full_task) {
       if (err) return callback(err);
+      full_task.version = params.version;
       callback(null, {
          full_task,
          task: getUserTask(full_task)
