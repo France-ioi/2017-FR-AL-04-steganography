@@ -151,7 +151,7 @@ function* TaskBundle (deps) {
     canvas.height = IMAGE_HEIGHT;
     const context = canvas.getContext('2d');
     context.drawImage(element, 0, 0);
-    const canvases = state.canvases.splice();
+    const canvases = state.canvases.slice();
     canvases[index] = canvas;
     const images = state.workspace.images.map(image => deepUpdateCanvas(image, canvases));
     return update(state, {
