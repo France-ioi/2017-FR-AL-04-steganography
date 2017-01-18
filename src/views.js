@@ -1,6 +1,6 @@
 
 import React from 'react';
-import {Button} from 'react-bootstrap';
+import {Alert, Button} from 'react-bootstrap';
 import EpicComponent from 'epic-component';
 import NumericInput from 'react-numeric-input';
 
@@ -291,28 +291,76 @@ export const Workspace = actions => EpicComponent(self => {
 
   const onOperationParamChange = function(operationParams) {
     self.props.dispatch({type: actions.operationParamsChanged, operationParams})
-  }
+  };
+
+  const onSubmitAnswer = function () {
+    const {answer} = self.state;
+    self.props.dispatch({type: actions.submitAnswer, answer});
+  };
+
+  const onDismissAnswerFeedback = function () {
+    self.props.dispatch({type: actions.dismissAnswerFeedback});
+  };
+
+  const onAnswerChange = function (event) {
+    const value = event.target.value;
+    self.setState({answer: value});
+  };
+
+  self.state = {answer: ""};
 
   self.render = function () {
-    const {task, workspace} = self.props;
+    const {score, task, workspace, submitAnswer} = self.props;
     const {images, currentImageIndex, currentOperationIndex, stagedImages, resultImage, resultName, operationParams} = workspace;
     const {originalImagesURLs} = task;
+    const {answer} = self.state;
     return (
       <div className="taskContent">
-        <div className="thumbnails-container-wrapper">
-          <ThumbnailsContainer images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
+        <div className="taskHeader">
+          <div className="submitBlock">
+            <p>Votre réponse :</p>
+            <input value={answer} onChange={onAnswerChange}/>
+            <Button onClick={onSubmitAnswer} disabled={submitAnswer && submitAnswer.status === 'pending'}>
+              {"soumettre"}
+            </Button>
+          </div>
+          {submitAnswer.feedback !== undefined &&
+            <div className="feedbackBlock" onClick={onDismissAnswerFeedback}>
+              {submitAnswer.feedback === true &&
+                <span>
+                  <i className="fa fa-check" style={{color: 'green'}}/>
+                  {" Votre réponse est correcte."}
+                </span>}
+              {submitAnswer.feedback === false &&
+                <span>
+                  <i className="fa fa-close" style={{color: 'red'}}/>
+                  {" Votre réponse est incorrecte."}
+                </span>}
+            </div>}
+          <div className="scoreBlock">
+            {"Score : "}{score === undefined ? '-' : score}
+          </div>
         </div>
-        <div className="imageAndActionPanel">
-          <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
-          <ActionPanel
-            operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
-            onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} resultName={resultName} onResultNameChange={onResultNameChange}
-            operationParams={operationParams} onOperationParamChange={onOperationParamChange}/>
-          {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
-          <div style={{display: "none"}}>
-            {originalImagesURLs.map(function(imageURL, imageIndex) {
-              return <img src={imageURL} onLoad={onImageLoad} data-index={imageIndex} key={imageIndex}/>;
-            })}
+        {submitAnswer.status === 'rejected' && (
+          submitAnswer.error === 'too soon'
+            ? <Alert bsStyle='warning'>{"Trop de réponses en une minute."}</Alert>
+            : <Alert bsStyle='error'>{"Votre réponse n'a pas pu être prise en compte."}</Alert>)}
+        <div>
+          <div className="thumbnails-container-wrapper">
+            <ThumbnailsContainer images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
+          </div>
+          <div className="imageAndActionPanel">
+            <BigImageContainer image={images[currentImageIndex]} index={currentImageIndex} showDelete={currentImageIndex >= originalImagesURLs.length} deleteImage={onDeleteImage}/>
+            <ActionPanel
+              operationIndex={currentOperationIndex} stagedImages={stagedImages} resultImage={resultImage}
+              onSetStagedImage={onSetStagedImage} onSetOperation={onSetOperation} onAddImage={onAddImage} resultName={resultName} onResultNameChange={onResultNameChange}
+              operationParams={operationParams} onOperationParamChange={onOperationParamChange}/>
+            {/* Temporary hack: images are loaded by the view, should be loaded by a saga. */}
+            <div style={{display: "none"}}>
+              {originalImagesURLs.map(function(imageURL, imageIndex) {
+                return <img src={imageURL} onLoad={onImageLoad} data-index={imageIndex} key={imageIndex}/>;
+              })}
+            </div>
           </div>
         </div>
       </div>

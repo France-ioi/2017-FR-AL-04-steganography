@@ -42,10 +42,11 @@ function* TaskBundle (deps) {
   }
 
   /* The 'Workspace' view displays the main task view to the contestant. */
+  yield use('submitAnswer', 'dismissAnswerFeedback')
   yield defineView('Workspace', WorkspaceSelector, Workspace(deps));
   function WorkspaceSelector (state, props) {
-    const {score, task, workspace, hintRequest, submitAnswer} = state;
-    return {score, task, workspace, hintRequest, submitAnswer: submitAnswer || {}};
+    const {score, task, workspace, submitAnswer} = state;
+    return {score, task, workspace, submitAnswer: submitAnswer || {}};
   }
 
   /* taskInitialized is called to update the global state when the task is first loaded. */
