@@ -20,7 +20,7 @@ function gradeAnswer (full_task, task, answer, callback) {
   const is_full_solution = answerNoSpaces === secret;
   const is_solution = is_full_solution;
   const feedback = is_full_solution;
-  const score = is_full_solution ? 100 : 0;
+  const score = is_full_solution ? 50 : 0;
   callback(null, {
     feedback, score, is_solution, is_full_solution
   });
