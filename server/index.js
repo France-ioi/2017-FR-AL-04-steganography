@@ -9,6 +9,7 @@ alkindiTaskServer({
   webpackConfig: require('../webpack.config.js'),
   generate: require('./generate'),
   gradeAnswer: gradeAnswer,
+  grantHint: grantHint,
   serverHook: function (app) {
     app.use('/images', express.static(path.resolve(path.dirname(__dirname), 'images')));
     app.use('/generated', express.static(outRootDir));
@@ -25,4 +26,8 @@ function gradeAnswer (full_task, task, answer, callback) {
   callback(null, {
     feedback, score, is_solution, is_full_solution
   });
+}
+
+function grantHint (full_task, task, query, callback) {
+  callback('no hints');
 }
