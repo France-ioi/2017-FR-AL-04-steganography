@@ -136,7 +136,7 @@ function genImages1(rng, outDir, outBase, cb) {
          var messages = genMessages(rng, 1);
          genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (filenames) {
             const imageURLs = filenames.map(fn => url.resolve(outBase, fn));
-            imageURLs.unshift("/images/key.png");
+            imageURLs.unshift("images/key.png");
             cb(null, {
                secret: messages[0],
                imagesURLs: imageURLs
