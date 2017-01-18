@@ -8,6 +8,7 @@ const alkindiTaskServer = require('alkindi-task-lib/server');
 alkindiTaskServer({
   webpackConfig: require('../webpack.config.js'),
   generate: require('./generate'),
+  gradeAnswer: gradeAnswer,
   serverHook: function (app) {
     app.use('/images', express.static(path.resolve(path.dirname(__dirname), 'images')));
     app.use('/generated', express.static(outRootDir));
