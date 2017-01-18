@@ -49,17 +49,18 @@ function* TaskBundle (deps) {
     return {score, task, workspace, submitAnswer: submitAnswer || {}};
   }
 
+  const emptyWorkspace = {
+    images: [],
+    currentImageIndex: 0,
+    currentOperationIndex: 0,
+    stagedImages: [null, null],
+    nextNameID: null,
+    operationParams: {}
+  };
+
   /* taskInitialized is called to update the global state when the task is first loaded. */
   function taskLoaded (state) {
-    const preWorkspace = {
-      images: [],
-      currentImageIndex: 0,
-      currentOperationIndex: 0,
-      stagedImages: [null, null],
-      nextNameID: null,
-      operationParams: {}
-    };
-    return {...state, workspace: updateWorkspace(state.task, preWorkspace)};
+    return {...state, workspace: updateWorkspace(state.task, emptyWorkspace)};
   }
 
   /* taskUpdated is called to update the global state when the task is updated. */
@@ -71,7 +72,10 @@ function* TaskBundle (deps) {
   /* workspaceLoaded is called to update the global state when a workspace dump is loaded. */
   function workspaceLoaded (state, dump) {
     const {images} = dump;
-    const preWorkspace = {images: images.map(loadImage)};
+    const preWorkspace = {
+      ...emptyWorkspace,
+      images: images.map(loadImage)
+    };
     return {...state, workspace: updateWorkspace(state.task, preWorkspace)};
   }
 
@@ -92,7 +96,7 @@ function* TaskBundle (deps) {
   }
 
   function isWorkspaceReady (state) {
-    return true;
+    return !!state.workspace.images;
   }
 
   const updateWorkspace = function (task, workspace) {
