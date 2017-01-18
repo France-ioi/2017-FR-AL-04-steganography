@@ -314,9 +314,9 @@ export const Workspace = actions => EpicComponent(self => {
     return (
       <div className="taskContent">
         <div className="taskHeader">
-          <div className="submitBlock">
-            <p>Votre réponse :</p>
-            <input value={answer} onChange={onAnswerChange}/>
+          <div className="submitBlock text-center form-inline">
+            <label>{"Votre réponse :"}</label>{' '}
+            <input className="form-control" value={answer} onChange={onAnswerChange}/>{' '}
             <Button onClick={onSubmitAnswer} disabled={submitAnswer && submitAnswer.status === 'pending'}>
               {"soumettre"}
             </Button>
