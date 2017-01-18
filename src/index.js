@@ -55,7 +55,7 @@ function* TaskBundle (deps) {
     currentOperationIndex: 0,
     stagedImages: [null, null],
     nextNameID: null,
-    operationParams: {}
+    operationParams: []
   };
 
   /* taskInitialized is called to update the global state when the task is first loaded. */
@@ -138,7 +138,7 @@ function* TaskBundle (deps) {
   yield defineAction('operationChanged', 'Workspace.Operation.Changed');
   yield defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
   yield defineAction('resultNameChanged', 'Workspace.ResultName.Changed');
-  yield defineAction('operationParamsChanged', 'Workspace.Operation.ParamsChanged');
+  yield defineAction('operationParamChanged', 'Workspace.Operation.ParamChanged');
 
   /*
     Add reducers for workspace actions and any needed sagas below:
@@ -241,10 +241,12 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('operationParamsChanged', function (state, action) {
-    const {operationParams} = action;
+  yield addReducer('operationParamChanged', function (state, action) {
+    const {paramIndex, paramValue} = action;
     let {workspace} = state;
-    let {resultImage} = workspace;
+    let {resultImage, operationParams} = workspace;
+    operationParams = operationParams.slice();
+    operationParams[paramIndex] = paramValue;
     resultImage = computeImage({...resultImage, operationParams});
     workspace = {...workspace, resultImage, operationParams};
     return {...state, workspace};
@@ -301,21 +303,26 @@ function* TaskBundle (deps) {
       const {name, index} = dump;
       return {name, index}; // src is set in updateWorkspace()
     } else {
-      const operation = findOperationByName(dump.operation);
-      const operands = dump.operands.map(loadImage);
-      const name = dump.name;
-      return {name, operation, operands}; // computation occurs in imageLoaded reducer
+      let {name, operation, operands, operationParams} = dump;
+      operation = findOperationByName(operation);
+      operands = operands.map(loadImage);
+      return {name, operation, operands, operationParams}; // computation occurs in imageLoaded reducer
     }
   }
 
   function computeImage (image) {
-    // Trim operands to length.
+    // Trim operands and numParams to length.
     let {operation, operands, operationParams} = image;
     const {name, numOperands} = operation;
-    operands = operands.slice(0, numOperands);
+    const numParams = operation.params ? operation.params.length : 0;
     if (operands.length < numOperands) {
       return image;
     }
+    if (operationParams.length < numParams) {
+      return image;
+    }
+    operands = operands.slice(0, numOperands);
+    operationParams = operationParams.slice(0, numParams);
     // Extract image data for each operand.
     const args = {
       operationParams,
@@ -342,7 +349,7 @@ function* TaskBundle (deps) {
     context.putImageData(resultData, 0, 0);
     // Build the data-URL used to display the image.
     const src = canvas.toDataURL('image/png');
-    return {...image, operands, canvas, src};
+    return {...image, operands, operationParams, canvas, src};
   }
 
 }

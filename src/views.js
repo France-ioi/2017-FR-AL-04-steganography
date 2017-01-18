@@ -164,7 +164,7 @@ export const OperationParam = EpicComponent(self => {
 // onAddImage - function to add the result image to the list of images.
 // resultName - name for the new image to be added.
 // operationParams - Workspace params object for this operation.
-// onOperationParamChange - function to call when params change.
+// onOperationParamChange - function to call when a param changes.
 export const ActionPanel = EpicComponent(self => {
 
   self.render = function() {
@@ -194,10 +194,7 @@ export const ActionPanel = EpicComponent(self => {
   };
 
   const onOperationParamChange = function(paramIndex, paramValue) {
-    let {operationParams} = self.props;
-    operationParams = {...operationParams};
-    operationParams[paramIndex] = paramValue;
-    self.props.onOperationParamChange(operationParams);
+    self.props.onOperationParamChange(paramIndex, paramValue);
   };
 
   const renderParams = function() {
@@ -289,8 +286,8 @@ export const Workspace = actions => EpicComponent(self => {
     self.props.dispatch({ type: actions.resultNameChanged, resultName });
   };
 
-  const onOperationParamChange = function(operationParams) {
-    self.props.dispatch({type: actions.operationParamsChanged, operationParams})
+  const onOperationParamChange = function(paramIndex, paramValue) {
+    self.props.dispatch({type: actions.operationParamChanged, paramIndex, paramValue})
   };
 
   const onSubmitAnswer = function () {
