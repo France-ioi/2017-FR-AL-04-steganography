@@ -196,7 +196,7 @@ function generate (params, seed, callback) {
    seed = seed || "";
 
    const rng = seedrandom(seed);
-   const hash = crypto.createHash('sha1').update('seed', 'utf8').digest('hex');
+   const hash = crypto.createHash('sha1').update(seed, 'utf8').digest('hex');
    const outDir = path.join(outRootDir, hash.substr(0, 2), hash.substring(2));
    const outBase = ["generated", hash.substr(0, 2), hash.substring(2), ''].join('/');
 
