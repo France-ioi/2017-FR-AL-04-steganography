@@ -286,8 +286,13 @@ function* TaskBundle (deps) {
     if ('index' in image) {
       return {name: image.name, index: image.index};
     } else {
-      const {name, operation, operands} = image;
-      return {name, operation: operation.name, operands: operands.map(dumpImage)};
+      const {name, operation, operands, params} = image;
+      return {
+        name,
+        operation: operation.name,
+        operands: operands.map(dumpImage),
+        operationParams
+      };
     }
   }
 
