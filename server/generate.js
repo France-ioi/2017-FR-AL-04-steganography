@@ -1,11 +1,30 @@
-const Jimp = require("jimp");
+const crypto = require('crypto');
+const fs = require('fs');
 const path = require("path");
 const url = require('url');
+
 const seedrandom = require('seedrandom');
-const crypto = require('crypto');
+const Jimp = require("jimp");
 const mkdirp = require('mkdirp');
+const AWS = require('aws-sdk');
 
 module.exports = generate;
+
+const {
+   AWS_DEFAULT_REGION,
+   AWS_S3_BUCKET,
+   AWS_S3_PATH
+} = process.env;
+
+let s3Client, generatedBase, staticBase;
+if (AWS_S3_BUCKET) {
+   s3Client = new AWS.S3({signatureVersion: 'v4'});
+   staticBase = generatedBase =
+      `https://s3.${AWS_DEFAULT_REGION}.amazonaws.com/${AWS_S3_BUCKET}/${AWS_S3_PATH}/`;
+} else {
+   generatedBase = 'generated/';
+   staticBase = 'images/';
+}
 
 const outRootDir = process.env.OUT_DIR || path.resolve(path.dirname(__dirname), 'generated');
 
@@ -121,25 +140,43 @@ function genMessageImages(rng, outDir, messages, messageImages, keyImage, font) 
       const messageImage = messageImages[iMessage];
       messageImage.print(font, 20, 200, message);
       mergeImages(rng, messageImage, keyImage, messageImage, ratio);
-      const filename = `message${iMessage + 1}.png`;
-      const filepath = path.resolve(outDir, filename);
+      const outPath = path.join(outDir, `message${iMessage + 1}.png`);
+      const filepath = path.resolve(outRootDir, outPath);
       messageImage.write(filepath, function (err) {
          if (err) return reject(err);
-         resolve(filename);
+         if (s3Client) {
+            fs.readFile(filepath, function (err, data) {
+               if (err) return reject(err);
+               const key = path.join(AWS_S3_PATH, outPath);
+               const params = {
+                  Bucket: AWS_S3_BUCKET,
+                  Key: key,
+                  Body: data,
+                  ACL: 'public-read',
+                  ContentType: 'image/png'
+               };
+               s3Client.upload(params, function (err, data) {
+                  if (err) return reject(err);
+                  resolve(data.Location);
+               });
+            });
+         } else {
+            resolve(url.resolve(generatedBase, outPath));
+         }
       });
    })));
 }
 
-function genImages1(rng, outDir, outBase, cb) {
+function genImages1(rng, outDir, cb) {
    Jimp.read("images/blank.png").catch(cb).then(function (messageImage1) {
    Jimp.read("images/key.png").catch(cb).then(function (keyImage) {
       Jimp.loadFont("fonts/font.fnt").catch(cb).then(function (font) {
       try {
          var messageImages = [messageImage1];
          var messages = genMessages(rng, 1);
-         genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (filenames) {
-            const imageURLs = filenames.map(fn => url.resolve(outBase, fn));
-            imageURLs.unshift("images/key.png");
+         genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (imageURLs) {
+            console.log('imageURLs', imageURLs);
+            imageURLs.unshift(url.resolve(staticBase, "key.png"));
             cb(null, {
                secret: messages[0],
                imagesURLs: imageURLs
@@ -153,7 +190,7 @@ function genImages1(rng, outDir, outBase, cb) {
    });
 }
 
-function genImages2(rng, outDir, outBase, cb) {
+function genImages2(rng, outDir, cb) {
    Jimp.read("images/blank.png").catch(cb).then(function (messageImage1) {
    Jimp.read("images/blank.png").catch(cb).then(function (messageImage2) {
    Jimp.read("images/blank.png").catch(cb).then(function (messageImage3) {
@@ -163,8 +200,7 @@ function genImages2(rng, outDir, outBase, cb) {
       try {
          var messageImages = [messageImage1, messageImage2, messageImage3, messageImage4];
          var messages = genMessages(rng, 4);
-         genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (filenames) {
-            const imageURLs = filenames.map(fn => url.resolve(outBase, fn));
+         genMessageImages(rng, outDir, messages, messageImages, keyImage, font).catch(cb).then(function (imageURLs) {
             cb(null, {
                secret: messages[0],
                imagesURLs: imageURLs
@@ -197,14 +233,13 @@ function generate (params, seed, callback) {
 
    const rng = seedrandom(seed);
    const hash = crypto.createHash('sha1').update(seed, 'utf8').digest('hex');
-   const outDir = path.join(outRootDir, hash.substr(0, 2), hash.substring(2));
-   const outBase = ["generated", hash.substr(0, 2), hash.substring(2), ''].join('/');
+   const outDir = path.join(hash.substr(0, 2), hash.substring(2));
 
-   mkdirp(outDir, function (err) {
+   mkdirp(path.join('generated', outDir), function (err) {
       if (err) return callback(err);
       switch (params.version) {
-         case 1: genImages1(rng, outDir, outBase, genImagesDone); break;
-         case 2: genImages2(rng, outDir, outBase, genImagesDone); break;
+         case 1: genImages1(rng, outDir, genImagesDone); break;
+         case 2: genImages2(rng, outDir, genImagesDone); break;
          default: callback('bad version'); break;
       }
    });
