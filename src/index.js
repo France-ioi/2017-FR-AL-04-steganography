@@ -286,7 +286,7 @@ function* TaskBundle (deps) {
     if ('index' in image) {
       return {name: image.name, index: image.index};
     } else {
-      const {name, operation, operands, params} = image;
+      const {name, operation, operands, operationParams} = image;
       return {
         name,
         operation: operation.name,
