@@ -81,13 +81,16 @@ function mergeImages(rng, img1, img2, result, ratio) {
          var finalRatio = ratio;
          if (pixel2.r == 255) {
             finalRatio = 1;
+            pixel2.r = 0;
          } else {
             finalRatio = ratio;
             if (rng() > 0.5) {
-               pixel2.r = 255 - pixel2.r;
+               pixel2.r = 5;
+            } else {
+               pixel2.r = -5;
             }
          }
-         var r = Math.round(pixel1.r * finalRatio + pixel2.r * (1 - finalRatio));
+         var r = Math.min(255, Math.max(0, pixel1.r + pixel2.r));
          var g = pixel1.g;
          var b = pixel1.b;
          result.setPixelColor(Jimp.rgbaToInt(r, g, b, 255), x, y);
