@@ -60,12 +60,16 @@ function* TaskBundle (deps) {
 
   /* taskInitialized is called to update the global state when the task is first loaded. */
   function taskLoaded (state) {
-    return {...state, workspace: updateWorkspace(state.task, emptyWorkspace)};
+    const canvases = state.task.originalImagesURLs.map(url => null);
+    return {...state,
+      workspace: updateWorkspace(state.task, emptyWorkspace, canvases),
+      canvases
+    };
   }
 
   /* taskUpdated is called to update the global state when the task is updated. */
   function taskUpdated (state) {
-    const workspace = updateWorkspace(state.task, state.workspace);
+    const workspace = updateWorkspace(state.task, state.workspace, state.canvases);
     return {...state, workspace};
   }
 
@@ -76,7 +80,7 @@ function* TaskBundle (deps) {
       ...emptyWorkspace,
       images: images.map(loadImage)
     };
-    return {...state, workspace: updateWorkspace(state.task, preWorkspace)};
+    return {...state, workspace: updateWorkspace(state.task, preWorkspace, state.canvases)};
   }
 
   /* dumpWorkspace is called to build a serializable workspace dump.
@@ -99,10 +103,10 @@ function* TaskBundle (deps) {
     return !!state.workspace.images;
   }
 
-  const updateWorkspace = function (task, workspace) {
+  const updateWorkspace = function (task, workspace, canvases) {
     // Remove the task images, clearing the cached canvas in image expressions
     // to force it to be re-computed.
-    const images = [];
+    let images = [];
     for (let image of workspace.images) {
       if ('operation' in image) {
         images.push(deepClearCanvas(image));
@@ -113,6 +117,7 @@ function* TaskBundle (deps) {
       const name = `Image ${index + 1}`;
       return {index, src, name};
     }));
+    images = images.map(image => deepUpdateCanvas(image, canvases));
 
     let {nextNameID, resultName} = workspace;
     if (!nextNameID) {
@@ -146,13 +151,13 @@ function* TaskBundle (deps) {
     canvas.height = IMAGE_HEIGHT;
     const context = canvas.getContext('2d');
     context.drawImage(element, 0, 0);
-    const images = state.workspace.images.map(image => deepUpdateCanvas(image, index, canvas));
-    const changes = {
-      workspace: {
-        images: {$set: images}
-      }
-    };
-    return update(state, changes);
+    const canvases = state.canvases.splice();
+    canvases[index] = canvas;
+    const images = state.workspace.images.map(image => deepUpdateCanvas(image, canvases));
+    return update(state, {
+      workspace: {images: {$set: images}},
+      canvases: {$set: canvases}
+    });
   });
 
   yield addReducer('imageSelected', function (state, action) {
@@ -246,24 +251,28 @@ function* TaskBundle (deps) {
   });
 
   function deepClearCanvas (image) {
-    if (image.canvas) {
-      return {...image, canvas: undefined, src: undefined};
+    if ('index' in image) {
+      return {index: image.index};
+    }
+    if ('operation' in image) {
+      const {name, operation, operands, operationParams} = image;
+      return {name, operation, operands, operationParams};
     }
     return image;
   }
 
-  function deepUpdateCanvas (image, index, canvas) {
+  function deepUpdateCanvas (image, canvases) {
     // Do nothing if the image already has a canvas.
     if (image.canvas) {
       return image;
     }
     if ('index' in image) {
       // If an image with matching index is found, set its canvas.
-      return image.index === index ? {...image, canvas} : image;
+      return {...image, canvas: canvases[image.index]};
     }
     // Update operands recursively, then attempt to compute the image.
     const operands = image.operands.map(function (image) {
-      return deepUpdateCanvas(image, index, canvas);
+      return deepUpdateCanvas(image, canvases);
     });
     return computeImage({...image, operands});
   }
