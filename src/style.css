@@ -124,3 +124,20 @@
 	margin: 3px auto 10px;
 	display: block;
 }
+
+/* answer submission, score, feedback */
+.submitBlock, .scoreBlock, .feedbackBlock, .saveBlock {
+    display: inline-block;
+    line-height: 34px;
+    margin: 0 10px 0 0;
+}
+.taskHeader > *:last-child {
+    margin: 0;
+}
+.scoreBlock, .feedbackBlock {
+    background: #f8f8f8;
+    padding: 0 8px;
+}
+.feedbackBlock {
+    cursor: pointer;
+}

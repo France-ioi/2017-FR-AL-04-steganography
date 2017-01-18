@@ -314,7 +314,7 @@ export const Workspace = actions => EpicComponent(self => {
     return (
       <div className="taskContent">
         <div className="taskHeader">
-          <div className="submitBlock text-center form-inline">
+          <div className="submitBlock form-inline">
             <label>{"Votre réponse :"}</label>{' '}
             <input className="form-control" value={answer} onChange={onAnswerChange}/>{' '}
             <Button onClick={onSubmitAnswer} disabled={submitAnswer && submitAnswer.status === 'pending'}>
@@ -341,7 +341,7 @@ export const Workspace = actions => EpicComponent(self => {
         {submitAnswer.status === 'rejected' && (
           submitAnswer.error === 'too soon'
             ? <Alert bsStyle='warning'>{"Trop de réponses en une minute."}</Alert>
-            : <Alert bsStyle='error'>{"Votre réponse n'a pas pu être prise en compte."}</Alert>)}
+            : <Alert bsStyle='danger'>{"Votre réponse n'a pas pu être prise en compte."}</Alert>)}
         <div>
           <div className="thumbnails-container-wrapper">
             <ThumbnailsContainer images={images} changeImageIndex={changeImageIndex} currentImageIndex={currentImageIndex}/>
