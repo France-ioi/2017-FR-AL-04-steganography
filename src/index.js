@@ -1,5 +1,4 @@
 
-import {use, defineAction, defineView, addReducer} from 'epic-linker';
 import runTask from 'alkindi-task-lib';
 import update from 'immutability-helper';
 
@@ -17,7 +16,7 @@ export function run (container, options) {
   runTask(container, options, TaskBundle);
 };
 
-function* TaskBundle (deps) {
+function TaskBundle (bundle, deps) {
 
   /*** Start of required task definitions ***/
 
@@ -30,20 +29,20 @@ function* TaskBundle (deps) {
   };
 
   /* The 'init' action sets the workspace operations in the global state. */
-  yield addReducer('init', function (state, action) {
+  bundle.addReducer('init', function (state, action) {
     return {...state, workspaceOperations};
   });
 
   /* The 'Task' view displays the task introduction to the contestant. */
-  yield defineView('Task', IntroSelector, Intro);
+  bundle.defineView('Task', IntroSelector, Intro);
   function IntroSelector (state) {
     const {version} = state.task;
     return {version};
   }
 
   /* The 'Workspace' view displays the main task view to the contestant. */
-  yield use('submitAnswer', 'dismissAnswerFeedback')
-  yield defineView('Workspace', WorkspaceSelector, Workspace(deps));
+  bundle.use('submitAnswer', 'dismissAnswerFeedback')
+  bundle.defineView('Workspace', WorkspaceSelector, Workspace(deps));
   function WorkspaceSelector (state, props) {
     const {score, task, workspace, submitAnswer} = state;
     return {score, task, workspace, submitAnswer: submitAnswer || {}};
@@ -131,20 +130,20 @@ function* TaskBundle (deps) {
 
   /* Actions dispatched by the workspace */
 
-  yield defineAction('imageLoaded', 'Workspace.Image.Loaded');
-  yield defineAction('imageAdded', 'Workspace.Image.Added');
-  yield defineAction('imageDeleted', 'Workspace.Image.Deleted');
-  yield defineAction('imageSelected', 'Workspace.Image.Selected');
-  yield defineAction('operationChanged', 'Workspace.Operation.Changed');
-  yield defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
-  yield defineAction('resultNameChanged', 'Workspace.ResultName.Changed');
-  yield defineAction('operationParamChanged', 'Workspace.Operation.ParamChanged');
+  bundle.defineAction('imageLoaded', 'Workspace.Image.Loaded');
+  bundle.defineAction('imageAdded', 'Workspace.Image.Added');
+  bundle.defineAction('imageDeleted', 'Workspace.Image.Deleted');
+  bundle.defineAction('imageSelected', 'Workspace.Image.Selected');
+  bundle.defineAction('operationChanged', 'Workspace.Operation.Changed');
+  bundle.defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
+  bundle.defineAction('resultNameChanged', 'Workspace.ResultName.Changed');
+  bundle.defineAction('operationParamChanged', 'Workspace.Operation.ParamChanged');
 
   /*
     Add reducers for workspace actions and any needed sagas below:
   */
 
-  yield addReducer('imageLoaded', function (state, action) {
+  bundle.addReducer('imageLoaded', function (state, action) {
     const {index, element} = action;
     const canvas = document.createElement('canvas');
     canvas.width = IMAGE_WIDTH;
@@ -160,12 +159,12 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('imageSelected', function (state, action) {
+  bundle.addReducer('imageSelected', function (state, action) {
     const {index} = action;
     return update(state, {workspace: {currentImageIndex: {$set: index}}});
   });
 
-  yield addReducer('imageAdded', function (state, action) {
+  bundle.addReducer('imageAdded', function (state, action) {
     let {image} = action;
     image = {...image, name: state.workspace.resultName};
 
@@ -181,7 +180,7 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('imageDeleted', function (state, action) {
+  bundle.addReducer('imageDeleted', function (state, action) {
     const {index} = action;
     // When deleting the last image, make the previous current.
     const newLength = state.workspace.images.length - 1;
@@ -196,7 +195,7 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('operationChanged', function (state, action) {
+  bundle.addReducer('operationChanged', function (state, action) {
     const {index} = action;
     const operation = OPERATIONS[index];
     const operands = state.workspace.stagedImages;
@@ -216,7 +215,7 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('stagedImageChanged', function (state, action) {
+  bundle.addReducer('stagedImageChanged', function (state, action) {
     const {workspace} = state;
     const {slotIndex, imageIndex} = action;
     const stagedImages = workspace.stagedImages.slice();
@@ -232,7 +231,7 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('resultNameChanged', function (state, action) {
+  bundle.addReducer('resultNameChanged', function (state, action) {
     const {resultName} = action;
     return update(state, {
       workspace: {
@@ -241,7 +240,7 @@ function* TaskBundle (deps) {
     });
   });
 
-  yield addReducer('operationParamChanged', function (state, action) {
+  bundle.addReducer('operationParamChanged', function (state, action) {
     const {paramIndex, paramValue} = action;
     let {workspace} = state;
     let {resultImage, operationParams} = workspace;
