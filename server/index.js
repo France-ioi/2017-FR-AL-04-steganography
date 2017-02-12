@@ -24,7 +24,7 @@ function gradeAnswer (full_task, task, answer, callback) {
   const feedback = is_full_solution;
   const score = is_full_solution ? 50 : 0;
   callback(null, {
-    feedback, score, is_solution, is_full_solution
+    success: true, feedback, score, is_solution, is_full_solution
   });
 }
 

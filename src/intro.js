@@ -75,10 +75,10 @@ export const IntroVersion2 = EpicComponent(self => {
 
 export default EpicComponent(self => {
   self.render = function () {
-    const {version} = self.props;
+    const {version, baseUrl} = self.props;
     switch (version) {
-      case 1: return <IntroVersion1/>;
-      case 2: return <IntroVersion2/>;
+      case 1: return <IntroVersion1 baseUrl={baseUrl}/>;
+      case 2: return <IntroVersion2 baseUrl={baseUrl}/>;
       default: return false;
     }
   };
