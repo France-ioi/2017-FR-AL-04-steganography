@@ -101,6 +101,14 @@ function validateImage (image) {
   if (operands.length < numOperands) {
     return null;
   }
+  /* In old dumps operationParams is an object, not an array */
+  if (!Array.isArray(operationParams)) {
+    const params = [];
+    Object.keys(operationParams).forEach(function (index) {
+      params[parseInt(index)] = operationParams[index];
+    });
+    operationParams = params;
+  }
   if (operationParams.length < numParams) {
     return null;
   }
