@@ -135,8 +135,11 @@ function TaskBundle (bundle, deps) {
   });
 
   bundle.addReducer('imageDeleted', function (state, action) {
-    const {index} = action;
-    // When deleting the last image, make the previous current.
+    let {index} = action;
+    /* Subtract the number of task images so that the index applies to the
+       dump rather than the workspace. */
+    index -= state.task.originalImagesURLs;
+    /* When deleting the last image, make the previous current. */
     const newLength = state.workspace.images.length - 1;
     function updateIndex (other) {
       return other === newLength ? other - 1 : other;
