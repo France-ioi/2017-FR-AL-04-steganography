@@ -26,7 +26,8 @@ export const CanvasImage = EpicComponent(self => {
     if (!image || !image.src) {
       return <div className="noImage" style={{width: width+'px', height: height+'px'}}>pas d'image</div>;
     }
-    return <img src={image.src} width={IMAGE_WIDTH} height={IMAGE_HEIGHT} style={{width: width+'px', height: height+'px'}}/>;
+    return <img src={image.src} width={IMAGE_WIDTH} height={IMAGE_HEIGHT}
+      style={{width: width+'px', height: height+'px'}} title={image.expr} />;
   };
 }, {displayName: 'CanvasImage'});
 
