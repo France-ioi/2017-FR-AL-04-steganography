@@ -102,13 +102,7 @@ function validateImage (image) {
     return null;
   }
   /* In old dumps operationParams is an object, not an array */
-  if (!Array.isArray(operationParams)) {
-    const params = [];
-    Object.keys(operationParams).forEach(function (index) {
-      params[parseInt(index)] = operationParams[index];
-    });
-    operationParams = params;
-  }
+  operationParams = toArray(operationParams);
   if (operationParams.length < numParams) {
     return null;
   }
@@ -129,7 +123,7 @@ function getImageExpr (image) {
     for (let operand of image.operands) {
       stack.push(getImageExpr(operand));
     }
-    for (let param of image.operationParams) {
+    for (let param of toArray(image.operationParams)) {
       stack.push(param.toString());
     }
     stack.push(image.operation);
@@ -147,4 +141,15 @@ export function dumpImage (image) {
   } else {
     return {operation: operation.name, operands: operands.map(dumpImage), operationParams};
   }
+}
+
+function toArray (value) {
+  if (!Array.isArray(value)) {
+    const items = [];
+    Object.keys(value).forEach(function (index) {
+      items[parseInt(index)] = value[index];
+    });
+    value = items;
+  }
+  return value;
 }
