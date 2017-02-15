@@ -5,7 +5,7 @@ import update from 'immutability-helper';
 import Intro from './intro';
 import {Workspace} from './views';
 import {OPERATIONS, IMAGE_WIDTH, IMAGE_HEIGHT} from './constants';
-import {updateWorkspace, computeImage, dumpImage} from './workspace';
+import {updateWorkspace, computeImage} from './workspace';
 
 import 'font-awesome/css/font-awesome.css';
 import 'bootstrap/dist/css/bootstrap.css';
@@ -118,15 +118,12 @@ function TaskBundle (bundle, deps) {
   });
 
   bundle.addReducer('imageAdded', function (state, action) {
-    const name = state.workspace.resultName;
-    const image = {...dumpImage(action.image), name};
     const dump = update(state.dump, {
-      images: {$push: [image]}
+      images: {$push: [action.image.dump]}
     });
     const newIndex = state.workspace.images.length;
     const nextNameID = state.workspace.nextNameID + 1;
     const workspace = update(state.workspace, {
-      images: {$push: [image]},
       currentImageIndex: {$set: newIndex},
       nextNameID: {$set: nextNameID},
       resultName: {$set: `Image ${nextNameID}`}
@@ -138,7 +135,7 @@ function TaskBundle (bundle, deps) {
     let {index} = action;
     /* Subtract the number of task images so that the index applies to the
        dump rather than the workspace. */
-    index -= state.task.originalImagesURLs;
+    index -= state.task.originalImagesURLs.length;
     /* When deleting the last image, make the previous current. */
     const newLength = state.workspace.images.length - 1;
     function updateIndex (other) {
@@ -194,10 +191,10 @@ function TaskBundle (bundle, deps) {
   });
 
   function updateResultImage (state) {
-    const {currentOperationIndex, stagedImages, operationParams} = state.workspace;
+    const {resultName, currentOperationIndex, stagedImages, operationParams} = state.workspace;
     const operation = OPERATIONS[currentOperationIndex];
-    const operands = stagedImages.map(dumpImage);
-    const dump = {operation: operation.name, operands: operands, operationParams};
+    const operands = stagedImages.map(image => image && image.dump);
+    const dump = {name: resultName, operation: operation.name, operands: operands, operationParams};
     const resultImage = computeImage(state, dump);
     return update(state, {
       workspace: {

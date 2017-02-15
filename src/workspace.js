@@ -20,7 +20,9 @@ export function updateWorkspace (state) {
   });
   dump.images.forEach(function (image) {
     image = computeImage(state, image, newCache);
-    newCache[image.expr] = image;
+    if (image !== null) {
+      newCache[image.expr] = image;
+    }
     images.push(image);
   });
 
@@ -37,23 +39,22 @@ export function updateWorkspace (state) {
   return {...state, imageCache: newCache, workspace};
 };
 
-export function computeImage (state, image, newCache) {
-  if ('index' in image) {
-    const {index, src} = image;
+export function computeImage (state, dump, newCache) {
+  if ('index' in dump) {
+    const {index, src} = dump;
     const name = `Image ${index + 1}`;
     const expr = index.toString();
-    const canvas = state.canvases[index];
-    return canvas ? {index, src, name, expr, canvas} : image;
+    const canvas = state.canvases[index]; // may be null
+    return {name, dump, index, src, expr, canvas};
   }
-  let result;
+  let image = loadImage(dump);
+  if (image === null) {
+    return {name: dump.name};
+  }
   const expr = getImageExpr(image);
   if (expr in state.imageCache) {
-    result = state.imageCache[expr];
+    image = state.imageCache[expr];
   } else {
-    result = validateImage(image);
-    if (result === null) {
-      return image;
-    }
     /* Create a new canvas to compute the result of the operation. */
     const canvas = document.createElement('canvas');
     canvas.width = IMAGE_WIDTH;
@@ -62,10 +63,10 @@ export function computeImage (state, image, newCache) {
     context.clearRect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
     const resultData = context.getImageData(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT);
     /* Prepare the arguments. */
-    const {operationParams, operands} = result;
+    const {operationParams, operands} = image;
     const args = {operationParams, operands: []};
     for (let operand of operands) {
-      if (operand === null) {
+      if (!operand) {
         return image;
       }
       operand = computeImage(state, operand, newCache);
@@ -77,24 +78,24 @@ export function computeImage (state, image, newCache) {
       args.operands.push(imageData);
     }
     /* Apply the operation. */
-    applyOperation(image.operation, args, resultData);
+    applyOperation(dump.operation, args, resultData);
     // Write the ImageData into the canvas.
     context.putImageData(resultData, 0, 0);
     // Build the data-URL used to display the image.
-    result.src = canvas.toDataURL('image/png');
-    result.expr = expr;
-    result.canvas = canvas;
+    image.src = canvas.toDataURL('image/png');
+    image.expr = expr;
+    image.canvas = canvas;
   }
   /* Save the computed image in the new cache. */
   if (newCache) {
-    newCache[expr] = result;
+    newCache[expr] = image;
   }
-  return result;
+  return image;
 }
 
-/* Return a sanitized image if it is valid, null otherwise. */
-function validateImage (image) {
-  let {operation, operands, operationParams} = image;
+/* Take a dump and return a sanitized image if it is valid, null otherwise. */
+function loadImage (dump) {
+  let {name, operation, operands, operationParams} = dump;
   operation = OPERATIONS.find(op => op.name === operation);
   const {numOperands, params} = operation;
   const numParams = params ? params.length : 0;
@@ -109,12 +110,12 @@ function validateImage (image) {
   /* Trim operands and numParams to length. */
   operands = operands.slice(0, numOperands);
   operationParams = operationParams.slice(0, numParams);
-  return {...image, operation, operands, operationParams};
+  return {dump, name, operation, operands, operationParams};
 }
 
 /* Return a cache key describing the (valid) image. */
 function getImageExpr (image) {
-  if (image === null) {
+  if (!image) {
     return 'null';
   } else if ('index' in image) {
     return image.index.toString();
@@ -128,18 +129,6 @@ function getImageExpr (image) {
     }
     stack.push(image.operation);
     return stack.join(' ');
-  }
-}
-
-export function dumpImage (image) {
-  if (image === null) {
-    return null;
-  }
-  const {index, operation, operands, operationParams} = image;
-  if (typeof index === 'number') {
-    return {index};
-  } else {
-    return {operation: operation.name, operands: operands.map(dumpImage), operationParams};
   }
 }
 
