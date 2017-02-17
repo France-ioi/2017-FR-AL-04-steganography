@@ -20,9 +20,6 @@ export function updateWorkspace (state) {
   });
   dump.images.forEach(function (image) {
     image = computeImage(state, image, newCache);
-    if (image !== null) {
-      newCache[image.expr] = image;
-    }
     images.push(image);
   });
 
@@ -51,9 +48,11 @@ export function computeImage (state, dump, newCache) {
   if (image === null) {
     return {name: dump.name};
   }
-  const expr = getImageExpr(image);
+  const expr = getImageExpr(image.dump);
+  image.expr = expr;
+  let cachedProps;
   if (expr in state.imageCache) {
-    image = state.imageCache[expr];
+    cachedProps = state.imageCache[expr];
   } else {
     /* Create a new canvas to compute the result of the operation. */
     const canvas = document.createElement('canvas');
@@ -79,17 +78,17 @@ export function computeImage (state, dump, newCache) {
     }
     /* Apply the operation. */
     applyOperation(dump.operation, args, resultData);
-    // Write the ImageData into the canvas.
+    /* Write the ImageData into the canvas. */
     context.putImageData(resultData, 0, 0);
-    // Build the data-URL used to display the image.
-    image.src = canvas.toDataURL('image/png');
-    image.expr = expr;
-    image.canvas = canvas;
+    /* Build the data-URL used to display the image. */
+    const src = canvas.toDataURL('image/png');
+    cachedProps = {canvas, src};
   }
-  /* Save the computed image in the new cache. */
+  /* Save the computed canvas, src in the new cache. */
   if (newCache) {
-    newCache[expr] = image;
+    newCache[expr] = cachedProps;
   }
+  Object.assign(image, cachedProps);
   return image;
 }
 
@@ -110,7 +109,10 @@ function loadImage (dump) {
   /* Trim operands and numParams to length. */
   operands = operands.slice(0, numOperands);
   operationParams = operationParams.slice(0, numParams);
-  return {dump, name, operation, operands, operationParams};
+  return {
+    dump: {name, operation: operation.name, operands, operationParams},
+    name, operation, operands, operationParams
+  };
 }
 
 /* Return a cache key describing the (valid) image. */
