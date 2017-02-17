@@ -128,7 +128,7 @@ function TaskBundle (bundle, deps) {
       nextNameID: {$set: nextNameID},
       resultName: {$set: `Image ${nextNameID}`}
     });
-    return updateWorkspace({...state, dump, workspace});
+    return updateResultImage(updateWorkspace({...state, dump, workspace}));
   });
 
   bundle.addReducer('imageDeleted', function (state, action) {
@@ -154,7 +154,11 @@ function TaskBundle (bundle, deps) {
     const {resultName} = action;
     return update(state, {
       workspace: {
-        resultName: {$set: resultName}
+        resultName: {$set: resultName},
+        resultImage: {
+          name: {$set: resultName},
+          dump: {name: {$set: resultName}}
+        }
       }
     });
   });
