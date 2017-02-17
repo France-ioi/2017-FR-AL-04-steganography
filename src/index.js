@@ -41,7 +41,7 @@ function TaskBundle (bundle, deps) {
   }
 
   /* The 'Workspace' view displays the main task view to the contestant. */
-  bundle.use('submitAnswer', 'dismissAnswerFeedback')
+  bundle.use('submitAnswer', 'dismissAnswerFeedback', 'SaveButton');
   bundle.defineView('Workspace', WorkspaceSelector, Workspace(deps));
   function WorkspaceSelector (state, props) {
     const {score, task, workspace, submitAnswer} = state;

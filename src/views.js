@@ -275,7 +275,7 @@ export const Workspace = actions => EpicComponent(self => {
 
   const onAddImage = function () {
     const image = self.props.workspace.resultImage;
-    self.props.dispatch({type: actions.imageAdded, image: self.props.workspace.resultImage});
+    self.props.dispatch({type: actions.imageAdded, image});
   };
 
   const onDeleteImage = function () {
@@ -338,6 +338,7 @@ export const Workspace = actions => EpicComponent(self => {
           <div className="scoreBlock">
             {"Score : "}{score === undefined ? '-' : score}
           </div>
+          {<div className="saveBlock"><actions.SaveButton/></div>}
         </div>
         {submitAnswer.status === 'rejected' && (
           submitAnswer.error === 'too soon'
