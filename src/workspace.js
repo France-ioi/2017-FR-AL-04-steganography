@@ -24,15 +24,16 @@ export function updateWorkspace (state) {
   });
 
   /* Set nextNameID, resultName if missing. */
-  let {nextNameID, resultName} = workspace;
+  let {nextNameID, resultName, resultNameChanged} = workspace;
   if (!nextNameID) {
     nextNameID = task.originalImagesURLs.length + 1;
   }
-  if (!resultName) {
-    resultName = `Image ${nextNameID}`;
+  workspace = {...workspace, images, nextNameID, resultName, resultNameChanged};
+
+  if (!resultNameChanged) {
+    workspace.resultName = generateUnusedName(images);
   }
 
-  workspace = {...workspace, images, nextNameID, resultName};
   return {...state, imageCache: newCache, workspace};
 };
 
@@ -143,4 +144,14 @@ function toArray (value) {
     value = items;
   }
   return value;
+}
+
+
+export function generateUnusedName (images) {
+  let counter = 0, name;
+  do {
+    counter += 1;
+    name = `Image ${counter}`;
+  } while (images.find(image => image.name === name));
+  return name;
 }

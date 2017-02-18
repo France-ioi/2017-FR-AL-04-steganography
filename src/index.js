@@ -53,8 +53,9 @@ function TaskBundle (bundle, deps) {
     currentImageIndex: 0,
     currentOperationIndex: 0,
     stagedImages: [null, null],
-    nextNameID: null,
-    operationParams: []
+    operationParams: [],
+    resultName: "",
+    resultNameChanged: false
   };
 
   /* taskInitialized is called to update the global state when the task is first loaded. */
@@ -109,7 +110,7 @@ function TaskBundle (bundle, deps) {
     context.drawImage(element, 0, 0);
     const canvases = state.canvases.slice();
     canvases[index] = canvas;
-    return updateWorkspace({...state, canvases});
+    return updateResultImage(updateWorkspace({...state, canvases}));
   });
 
   bundle.addReducer('imageSelected', function (state, action) {
@@ -122,11 +123,9 @@ function TaskBundle (bundle, deps) {
       images: {$push: [action.image.dump]}
     });
     const newIndex = state.workspace.images.length;
-    const nextNameID = state.workspace.nextNameID + 1;
     const workspace = update(state.workspace, {
       currentImageIndex: {$set: newIndex},
-      nextNameID: {$set: nextNameID},
-      resultName: {$set: `Image ${nextNameID}`}
+      resultNameChanged: {$set: false}
     });
     return updateResultImage(updateWorkspace({...state, dump, workspace}));
   });
@@ -147,20 +146,17 @@ function TaskBundle (bundle, deps) {
     const workspace = update(state.workspace, {
       currentImageIndex: {$apply: updateIndex}
     });
-    return updateWorkspace({...state, dump, workspace});
+    return updateResultImageName(updateWorkspace({...state, dump, workspace}));
   });
 
   bundle.addReducer('resultNameChanged', function (state, action) {
     const {resultName} = action;
-    return update(state, {
+    return updateResultImageName(update(state, {
       workspace: {
         resultName: {$set: resultName},
-        resultImage: {
-          name: {$set: resultName},
-          dump: {name: {$set: resultName}}
-        }
+        resultNameChanged: {$set: true}
       }
-    });
+    }));
   });
 
   bundle.addReducer('operationChanged', function (state, action) {
@@ -203,6 +199,18 @@ function TaskBundle (bundle, deps) {
     return update(state, {
       workspace: {
         resultImage: {$set: resultImage}
+      }
+    });
+  }
+
+  function updateResultImageName (state) {
+    const resultName = state.workspace.resultName;
+    return update(state, {
+      workspace: {
+        resultImage: {
+          name: {$set: resultName},
+          dump: {name: {$set: resultName}}
+        }
       }
     });
   }
