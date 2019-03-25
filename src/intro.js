@@ -1,4 +1,5 @@
 import React from 'react';
+import {connect} from 'react-redux';
 import EpicComponent from 'epic-component';
 
 export const IntroVersion1 = EpicComponent(self => {
@@ -73,7 +74,7 @@ export const IntroVersion2 = EpicComponent(self => {
   };
 });
 
-export default EpicComponent(self => {
+export const Intro = EpicComponent(self => {
   self.render = function () {
     const {version, baseUrl} = self.props;
     switch (version) {
@@ -83,3 +84,14 @@ export default EpicComponent(self => {
     }
   };
 });
+
+function IntroSelector (state) {
+  const {version, taskBaseUrl} = state.task;
+  return {version, baseUrl: taskBaseUrl};
+}
+
+export default {
+  views: {
+     Task: connect(IntroSelector)(Intro)
+  },
+};

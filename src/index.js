@@ -33,12 +33,7 @@ function TaskBundle (bundle, deps) {
     return {...state, workspaceOperations};
   });
 
-  /* The 'Task' view displays the task introduction to the contestant. */
-  bundle.defineView('Task', IntroSelector, Intro);
-  function IntroSelector (state) {
-    const {version, taskBaseUrl} = state.task;
-    return {version, baseUrl: taskBaseUrl};
-  }
+
 
   /* The 'Workspace' view displays the main task view to the contestant. */
   bundle.use('submitAnswer', 'dismissAnswerFeedback', 'SaveButton');
