@@ -1,213 +1,101 @@
+import algoreaReactTask from "./algorea_react_task";
+import {updateWorkspace} from "./utils";
 
-import runTask from 'alkindi-task-lib';
-import update from 'immutability-helper';
+import "font-awesome/css/font-awesome.css";
+import "bootstrap/dist/css/bootstrap.css";
+import "rc-tooltip/assets/bootstrap.css";
+import "./platform.css";
+import "./style.css";
 
-import Intro from './intro';
-import {Workspace} from './views';
-import {OPERATIONS, IMAGE_WIDTH, IMAGE_HEIGHT} from './constants';
-import {updateWorkspace, computeImage} from './workspace';
+import WorkspaceBundle from "./workspace_bundle";
 
-import 'font-awesome/css/font-awesome.css';
-import 'bootstrap/dist/css/bootstrap.css';
-import 'rc-tooltip/assets/bootstrap.css';
-import './style.css';
-
-export function run (container, options) {
-  runTask(container, options, TaskBundle);
+const emptyWorkspace = {
+  images: [],
+  currentImageIndex: 0,
+  currentOperationIndex: 0,
+  stagedImages: [null, null],
+  operationParams: [],
+  resultName: "",
+  resultNameChanged: false
 };
 
-function TaskBundle (bundle, deps) {
+const TaskBundle = {
+  actionReducers: {
+    appInit: appInitReducer,
+    taskInit: taskInitReducer /* possibly move to algorea-react-task */,
+    taskRefresh: taskRefreshReducer /* possibly move to algorea-react-task */,
+    taskAnswerLoaded: taskAnswerLoaded,
+    taskStateLoaded: taskStateLoaded
+  },
+  includes: [WorkspaceBundle],
+  selectors: {
+    getTaskState,
+    getTaskAnswer
+  }
+};
 
-  /*** Start of required task definitions ***/
-
-  const workspaceOperations = {
-    taskLoaded,
-    taskUpdated,
-    workspaceLoaded,
-    dumpWorkspace,
-    isWorkspaceReady
+if (process.env.NODE_ENV === "development") {
+  /* eslint-disable no-console */
+  TaskBundle.earlyReducer = function (state, action) {
+    console.log("ACTION", action.type, action);
+    return state;
   };
+}
 
-  /* The 'init' action sets the workspace operations in the global state. */
-  bundle.addReducer('init', function (state, action) {
-    return {...state, workspaceOperations};
-  });
-
-
-
-  /* The 'Workspace' view displays the main task view to the contestant. */
-  bundle.use('submitAnswer', 'dismissAnswerFeedback', 'SaveButton');
-  bundle.defineView('Workspace', WorkspaceSelector, Workspace(deps));
-  function WorkspaceSelector (state, props) {
-    const {score, task, workspace, submitAnswer} = state;
-    return {score, task, workspace, submitAnswer: submitAnswer || {}};
-  }
-
-  const emptyWorkspace = {
-    images: [],
-    currentImageIndex: 0,
-    currentOperationIndex: 0,
-    stagedImages: [null, null],
-    operationParams: [],
-    resultName: "",
-    resultNameChanged: false
+function appInitReducer (state, _action) {
+  const taskMetaData = {
+    id: "http://concours-alkindi.fr/tasks/2018/enigma",
+    language: "fr",
+    version: "fr.01",
+    authors: "Sébastien Carlier",
+    translators: [],
+    license: "",
+    taskPathPrefix: "",
+    modulesPathPrefix: "",
+    browserSupport: [],
+    fullFeedback: true,
+    acceptedAnswers: [],
+    usesRandomSeed: true
   };
+  return {...state, taskMetaData};
+}
 
-  /* taskInitialized is called to update the global state when the task is first loaded. */
-  function taskLoaded (state) {
-    const canvases = state.task.originalImagesURLs.map(url => null);
-    const imageCache = {};
-    const dump = {images: []};
-    const workspace = emptyWorkspace;
-    return updateWorkspace({...state, dump, workspace, canvases, imageCache});
-  }
-
-  /* taskUpdated is called to update the global state when the task is updated. */
-  function taskUpdated (state) {
-    return updateWorkspace(state);
-  }
-
-  /* workspaceLoaded is called to update the global state when a workspace dump is loaded. */
-  function workspaceLoaded (state, dump) {
-    const workspace = {...emptyWorkspace};
-    return updateWorkspace({...state, dump, workspace});
-  }
-
-  function dumpWorkspace (state) {
-    return state.dump;
-  }
-
-  function isWorkspaceReady (state) {
-    return !!state.workspace.images;
-  }
-
-  /* Actions dispatched by the workspace */
-
-  bundle.defineAction('imageLoaded', 'Workspace.Image.Loaded');
-  bundle.defineAction('imageAdded', 'Workspace.Image.Added');
-  bundle.defineAction('imageDeleted', 'Workspace.Image.Deleted');
-  bundle.defineAction('imageSelected', 'Workspace.Image.Selected');
-  bundle.defineAction('operationChanged', 'Workspace.Operation.Changed');
-  bundle.defineAction('stagedImageChanged', 'Workspace.StagedImage.Changed');
-  bundle.defineAction('resultNameChanged', 'Workspace.ResultName.Changed');
-  bundle.defineAction('operationParamChanged', 'Workspace.Operation.ParamChanged');
-
-  /*
-    Add reducers for workspace actions and any needed sagas below:
-  */
-
-  bundle.addReducer('imageLoaded', function (state, action) {
-    const {index, element} = action;
-    const canvas = document.createElement('canvas');
-    canvas.width = IMAGE_WIDTH;
-    canvas.height = IMAGE_HEIGHT;
-    const context = canvas.getContext('2d');
-    context.drawImage(element, 0, 0);
-    const canvases = state.canvases.slice();
-    canvases[index] = canvas;
-    return updateResultImage(updateWorkspace({...state, canvases}));
+function taskInitReducer (state, _action) {
+  const canvases = state.taskData.originalImagesURLs.map(_url => null);
+  const imageCache = {};
+  const dump = {images: []};
+  const workspace = emptyWorkspace;
+  return updateWorkspace({
+    ...state,
+    dump,
+    workspace,
+    canvases,
+    imageCache,
+    taskReady: true
   });
+}
 
-  bundle.addReducer('imageSelected', function (state, action) {
-    const {index} = action;
-    return update(state, {workspace: {currentImageIndex: {$set: index}}});
-  });
+function taskRefreshReducer (state, _action) {
+  return updateWorkspace(state);
+}
 
-  bundle.addReducer('imageAdded', function (state, action) {
-    const dump = update(state.dump, {
-      images: {$push: [action.image.dump]}
-    });
-    const newIndex = state.workspace.images.length;
-    const workspace = update(state.workspace, {
-      currentImageIndex: {$set: newIndex},
-      resultNameChanged: {$set: false}
-    });
-    return updateResultImage(updateWorkspace({...state, dump, workspace}));
-  });
+function getTaskAnswer (state) {
+  return state.answer;
+}
 
-  bundle.addReducer('imageDeleted', function (state, action) {
-    let {index} = action;
-    /* Subtract the number of task images so that the index applies to the
-       dump rather than the workspace. */
-    index -= state.task.originalImagesURLs.length;
-    /* When deleting the last image, make the previous current. */
-    const newLength = state.workspace.images.length - 1;
-    function updateIndex (other) {
-      return other === newLength ? other - 1 : other;
-    }
-    const dump = update(state.dump, {
-      images: {$splice: [[index, 1]]}
-    });
-    const workspace = update(state.workspace, {
-      currentImageIndex: {$apply: updateIndex}
-    });
-    return updateResultImageName(updateWorkspace({...state, dump, workspace}));
-  });
+function taskAnswerLoaded (state, answer) {
+  return {...state, answer: answer};
+}
 
-  bundle.addReducer('resultNameChanged', function (state, action) {
-    const {resultName} = action;
-    return updateResultImageName(update(state, {
-      workspace: {
-        resultName: {$set: resultName},
-        resultNameChanged: {$set: true}
-      }
-    }));
-  });
+function getTaskState (state) {
+  return state.dump;
+}
 
-  bundle.addReducer('operationChanged', function (state, action) {
-    const {index} = action;
-    const operation = OPERATIONS[index];
-    const operationParams = (operation.params||[]).map(pt => pt.default);
-    return updateResultImage(update(state, {
-      workspace: {
-        currentOperationIndex: {$set: index},
-        operationParams: {$set: operationParams}
-      }
-    }));
-  });
+function taskStateLoaded (state, dump) {
+  const workspace = {...emptyWorkspace};
+  return updateWorkspace({...state, dump, workspace});
+}
 
-  bundle.addReducer('stagedImageChanged', function (state, action) {
-    const {slotIndex, imageIndex} = action;
-    const image = state.workspace.images[imageIndex];
-    return updateResultImage(update(state, {
-      workspace: {
-        stagedImages: {[slotIndex]: {$set: image}}
-      }
-    }));
-  });
-
-  bundle.addReducer('operationParamChanged', function (state, action) {
-    const {paramIndex, paramValue} = action;
-    return updateResultImage(update(state, {
-      workspace: {
-        operationParams: {[paramIndex]: {$set: paramValue}}
-      }
-    }));
-  });
-
-  function updateResultImage (state) {
-    const {resultName, currentOperationIndex, stagedImages, operationParams} = state.workspace;
-    const operation = OPERATIONS[currentOperationIndex];
-    const operands = stagedImages.map(image => image && image.dump);
-    const dump = {name: resultName, operation: operation.name, operands: operands, operationParams};
-    const resultImage = computeImage(state, dump);
-    return update(state, {
-      workspace: {
-        resultImage: {$set: resultImage}
-      }
-    });
-  }
-
-  function updateResultImageName (state) {
-    const resultName = state.workspace.resultName;
-    return update(state, {
-      workspace: {
-        resultImage: {
-          name: {$set: resultName},
-          dump: {name: {$set: resultName}}
-        }
-      }
-    });
-  }
-
+export function run (container, options) {
+  return algoreaReactTask(container, options, TaskBundle);
 }
