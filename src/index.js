@@ -83,15 +83,15 @@ function getTaskAnswer (state) {
   return state.answer;
 }
 
-function taskAnswerLoaded (state, answer) {
-  return {...state, answer: answer};
+function taskAnswerLoaded (state, {payload: {answer}}) {
+  return {...state, answer};
 }
 
 function getTaskState (state) {
   return state.dump;
 }
 
-function taskStateLoaded (state, dump) {
+function taskStateLoaded (state, {payload: {dump}}) {
   const workspace = {...emptyWorkspace};
   return updateWorkspace({...state, dump, workspace});
 }

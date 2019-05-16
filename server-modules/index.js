@@ -12,7 +12,6 @@ module.exports.taskData = async function (args, callback) {
     args.task.params,
     args.task.random_seed
   );
-  console.log("publicData :", publicData);
   callback(null, publicData);
 };
 
